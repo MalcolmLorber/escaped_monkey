@@ -50,9 +50,7 @@ def leaderElection(s):
             msg = json.loads(con.recv(2**16))
             if msg['opcode'] == 'OK':
                 peersleft -= 1
-            
-                
-            
+                        
     while True:
         con, address = s.sock.accept()
         msg = json.loads(con.recv(2**16))

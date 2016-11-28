@@ -51,7 +51,7 @@ class Peer(object):
             self._lastZxid = 0
 
     # I know you can do this not 100% sure on the syntax
-    @acceptedEpoch
+    @property
     def acceptedEpoch(self):
         return self._acceptedEpoch
     @acceptedEpoch.setter
@@ -60,7 +60,7 @@ class Peer(object):
             f.write(str(value))
         self._acceptedEpoch = value
 
-    @currentEpoch
+    @property
     def currentEpoch(self):
         return self._currentEpoch
     @currentEpoch.setter
@@ -69,7 +69,7 @@ class Peer(object):
             f.write(str(value))
         self._currentEpoch = value
 
-    @lastZxid
+    @property
     def lastZxid(self):
         return self._lastZxid
     @lastZxid.setter
