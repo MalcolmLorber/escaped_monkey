@@ -36,7 +36,7 @@ def sendMessage(opcode, message, peernum):
         sendMessage.threads = []
         with open('peers.txt') as f:
             for i, ip in enumerate(f.read().split('\n')):
-                sendMessage.peers[i] = (ip.strip(), getport(i))
+                sendMessage.peers[i+1] = (ip.strip(), getport(i+1))
         
     # TODO: spawn new thread for this. Send tcp message to localhost on error?
     message['senderid'] = peernum
@@ -121,7 +121,7 @@ def main():
     s.peers = {}
     with open('peers.txt') as f:
         for i, ip in enumerate(f.read().split('\n')):
-            s.peers[i] = (ip.strip(), getport(i))
+            s.peers[i+1] = (ip.strip(), getport(i+1))
             
     s.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.sock.bind(('0.0.0.0', getport(peerID)))
