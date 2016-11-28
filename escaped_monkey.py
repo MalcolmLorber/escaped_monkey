@@ -104,3 +104,6 @@ def main():
     state = "leader_election"
     while True:
         state = states[state](s)
+
+if __name__ == "__main__":
+    main()
