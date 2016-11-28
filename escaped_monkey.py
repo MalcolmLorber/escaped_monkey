@@ -3,6 +3,7 @@
 import socket
 import sys
 import select
+import threading
 
 import persist
 
@@ -10,10 +11,17 @@ import persist
 DEFAULTPORT = 60000
 
 # Utility functions
+def sendMsgA(addr, msg):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(addr)
+    s.send(msg)
+    s.close()
+    
 def sendMessage(opcode, message, peernum):
     """Sends a message without blocking. May throw error on timeout"""
     if not hasattr(sendMessage, 'peers'):
         sendMessage.peers = {}
+        sendMessage.threads = []
         with open('peers.txt') as f:
             for i, ip in enumerate(f.read().split('\n')):
                 sendMessage.peers[i] = (ip.strip(), getport(i))
@@ -21,10 +29,10 @@ def sendMessage(opcode, message, peernum):
     # TODO: spawn new thread for this. Send tcp message to localhost on error?
     message['senderid'] = peernum
     message['opcode'] = opcode
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(sendMessage.peers[peernum])
-    s.send(json.dumps(message))
-    s.close()
+
+    t = threading.Thread(target=sendMsgA, args=(sendMessage.peers[peernum], json.dumps(message)))
+    t.start()
+    sendMessage.threads.append(t)    
 
 # Helper functions
 def getport(peerID):
