@@ -73,7 +73,7 @@ def leaderElection(s):
             sendMessage(s, 'ELECTION', {}, peerid)
 
     peersleft = len(filter(lambda x: x > s.peerID, s.peers))
-    for msg in timeloop(s.sock):
+    for msg in timeloop(s.sock, 2.0):
         if msg['opcode'] == 'OK':
             peersleft -= 1
             if peersleft == 0:
