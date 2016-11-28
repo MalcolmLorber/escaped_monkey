@@ -2,6 +2,7 @@
 
 import socket
 import sys
+import select
 
 import persist
 
@@ -37,9 +38,22 @@ def leaderElection(s):
             sendMessage('ELECTION', '', peerid)
 
     
+    timeleft = 5.0
+    peersleft = len(s.peers)
+    while timeleft > 0.01 and :
+        st = time.time()
+        ir, outr, er = select.select(s.sock, [], [], timeleft)
+        timeleft -= time.time() - st
+        for sock in ir:
+            con, addr = sock.accept()
+            msg = json.loads(con.recv(2**16))
+            if msg['opcode'] == 'OK':
+                peersleft -= 1
+            
+                
             
     while True:
-        con, address = s.accept()
+        con, address = s.sock.accept()
         msg = json.loads(con.recv(2**16))
         
         if msg['opcode'] == 'ELECTION':
