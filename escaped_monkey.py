@@ -35,7 +35,7 @@ def sendMessage(s, opcode, message, peernum):
         sendMessage.peers = {}
         sendMessage.threads = []
         with open('peers.txt') as f:
-            for i, ip in enumerate(f.read().split('\n')):
+            for i, ip in enumerate(filter(lambda x: x != '', f.read().split('\n'))):
                 sendMessage.peers[i+1] = (ip.strip(), getport(i+1))
         
     # TODO: spawn new thread for this. Send tcp message to localhost on error?
@@ -73,15 +73,16 @@ def leaderElection(s):
             sendMessage(s, 'ELECTION', {}, peerid)
 
     peersleft = len(filter(lambda x: x > s.peerID, s.peers))
-    for msg in timeloop(s.sock, 2.0):
-        if msg['opcode'] == 'OK':
-            peersleft -= 1
-            if peersleft == 0:
-                break
-        elif msg['opcode'] == 'ELECTION':
-            if msg['senderid'] < s.peerID:
-                sendMessage(s, 'OK', {}, msg['senderid'])
-                
+    if peersleft != 0:
+        for msg in timeloop(s.sock, 2.0):
+            if msg['opcode'] == 'OK':
+                peersleft -= 1
+                if peersleft == 0:
+                    break
+            elif msg['opcode'] == 'ELECTION':
+                if msg['senderid'] < s.peerID:
+                    sendMessage(s, 'OK', {}, msg['senderid'])
+                        
     if peersleft == len(filter(lambda x: x > s.peerID, s.peers)):
         dprint("I AM LEADER. MWAHAHAHAHAHA")
         s.leader = s.peerID
@@ -171,7 +172,7 @@ def main():
     # Initilize the list of peers
     s.peers = {}
     with open('peers.txt') as f:
-        for i, ip in enumerate(f.read().split('\n')):
+        for i, ip in enumerate(filter(lambda x: x != '', f.read().split('\n'))):
             s.peers[i+1] = (ip.strip(), getport(i+1))
             
     s.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
