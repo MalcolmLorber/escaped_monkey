@@ -59,7 +59,7 @@ def leaderElection(s):
             sendMessage('ELECTION', {}, peerid)
 
     
-    timeleft = 5.0
+    timeleft = 2.0
     peersleft = len(filter(lambda x: x > s.peerID, s.peers))
     while timeleft > 0.01 and peersleft != 0:
         st = time.time()
@@ -74,23 +74,48 @@ def leaderElection(s):
             elif msg['opcode'] == 'ELECTION':
                 if msg['senderid'] < s.peerID:
                     sendMessage('OK', {}, msg['senderid'])
-                        
-    while True:
-        con, address = s.sock.accept()
-        msg = json.loads(con.recv(2**16))
-        dprint("Recieved message: %s"%str(msg))
-        
-        if msg['opcode'] == 'ELECTION':
-            if msg['senderid']<s.peerID:
-                sendMessage('OK', {}, msg['senderid'])
+
+    if peersleft == len(filter(lambda x: x > s.peerID, s.peers)):
+        dprint("I AM LEADER. MWAHAHAHAHAHA")
+        s.leader = s.peerID
+        for peerid in filter(lambda x: x > s.peerID, s.peers):
+            sendMessage('COORDINATOR', {}, peerid)
+        return "discovery"
+
+    dprint("waiting for message from our great leader")
+    timeleft = 2.0
+    while timeleft > 0.01:
+        st = time.time()
+        ir, outr, er = select.select([s.sock], [], [], timeseft)
+        timeleft -= time.time() - st
+        for sock in ir:
+            con, addr = sock.accept()
+            msg = json.loads(con.cerv(2**16))
+            dprint("Recieved message: %s"%str(msg))
+            if msg['opcode'] == 'COORDINATOR':
+                s.leader = msg.['senderid']
+                return "discovery"
+            else:
+                dprint("message extranious")
+    return "leader_election"
             
-        elif msg['opcode'] == 'COORDINATOR':
-            s.leader=msg['senderid']
-            return "discovery"
+    
+    # while True:
+    #     con, address = s.sock.accept()
+    #     msg = json.loads(con.recv(2**16))
+    #     dprint("Recieved message: %s"%str(msg))
         
-        elif msg['opcode'] == 'OK':
-            pass
-	return "discovery"
+    #     if msg['opcode'] == 'ELECTION':
+    #         if msg['senderid']<s.peerID:
+    #             sendMessage('OK', {}, msg['senderid'])
+            
+    #     elif msg['opcode'] == 'COORDINATOR':
+    #         s.leader=msg['senderid']
+    #         return "discovery"
+        
+    #     elif msg['opcode'] == 'OK':
+    #         pass
+    #     return "discovery"
 
 def discovery(s):
     return "synchronization"
