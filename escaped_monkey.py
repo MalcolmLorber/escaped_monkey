@@ -64,10 +64,10 @@ def leaderElection(s):
             return "Discovery"
         elif msg['opcode'] == 'OK':
             pass
-	return "Discovery"
+	return "discovery"
 
 def discovery(s):
-    return "Synchronization"
+    return "synchronization"
 
 def synchronization(s):
     return "broadcast"
@@ -79,7 +79,7 @@ def broadcast(s):
 
 states = {"leader_election": leaderElection,
           "discovery": discovery,
-          "synchronization": Synchronization,
+          "synchronization":  synchronization,
           "broadcast": broadcast}
 
 def main():
