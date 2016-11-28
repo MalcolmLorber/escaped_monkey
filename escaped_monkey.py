@@ -47,7 +47,8 @@ def leaderElection(s):
                 sendMessage('OK','',msg['senderid'])
             pass
         elif msg['opcode'] == 'COORDINATOR':
-            pass
+            s.leader=msg['senderid']
+            return "Discovery"
         elif msg['opcode'] == 'OK':
             pass
 	return "Discovery"
