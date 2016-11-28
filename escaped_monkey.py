@@ -13,11 +13,14 @@ DEFAULTPORT = 60000
 
 # Utility functions
 def sendMsgA(addr, msg):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(addr)
-    s.send(msg)
-    s.close()
-    
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(addr)
+        s.send(msg)
+        s.close()
+    except:
+        print("could not send message to %s"%str(addr))
+        
 def sendMessage(opcode, message, peernum):
     """Sends a message without blocking. May throw error on timeout"""
     if not hasattr(sendMessage, 'peers'):
