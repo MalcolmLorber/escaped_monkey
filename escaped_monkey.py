@@ -86,7 +86,7 @@ def leaderElection(s):
     timeleft = 2.0
     while timeleft > 0.01:
         st = time.time()
-        ir, outr, er = select.select([s.sock], [], [], timeseft)
+        ir, outr, er = select.select([s.sock], [], [], timeleft)
         timeleft -= time.time() - st
         for sock in ir:
             con, addr = sock.accept()
