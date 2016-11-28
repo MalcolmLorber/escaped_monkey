@@ -15,7 +15,7 @@ def sendMessage(opcode, message, peernum):
         sendMessage.peers = {}
         with open('peers.txt') as f:
             for i, ip in enumerate(f.read().split('\n')):
-                sendMessage.peers[i] = ip.strip()
+                sendMessage.peers[i] = (ip.strip(), getport(i))
         
     # TODO: spawn new thread for this. Send tcp message to localhost on error?
     message['senderid'] = peernum
@@ -32,6 +32,12 @@ def getport(peerID):
 # FSM States
 def leaderElection(s):
     s.leader = None
+
+    for peerid in s.peers if peerid > s.peerID:
+            sendMessage('ELECTION', '', peerid)
+
+    
+            
     while True:
         con, address = s.accept()
         msg = json.loads(con.recv(2**16))
@@ -62,11 +68,19 @@ states = {"leader_election": leaderElection,
 
 def main():
     if len(sys.argv) != 2:
-        print("usage: %s ID"%sys.argv[0)]
-        
+        print("usage: %s ID"%sys.argv[0])
+
     peerID = int(sys.argv[1])
     
     s = persist.Peer(peerID)
+
+    # Initilize the list of peers
+    if not hasattr(sendMessage, 'peers'):
+        s.peers = {}
+        with open('peers.txt') as f:
+            for i, ip in enumerate(f.read().split('\n')):
+                s.peers[i] = (ip.strip(), getport(i))
+                
     s.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.sock.bind(('0.0.0.0', getport(peerID)))
     s.listen(10)
