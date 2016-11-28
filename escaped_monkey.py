@@ -29,7 +29,7 @@ def sendMsgA(addr, msg):
     except:
         dprint("could not send message to %s"%str(addr))
         
-def sendMessage(opcode, message, peernum):
+def sendMessage(s, opcode, message, peernum):
     """Sends a message without blocking. May throw error on timeout"""
     if not hasattr(sendMessage, 'peers'):
         sendMessage.peers = {}
@@ -39,7 +39,7 @@ def sendMessage(opcode, message, peernum):
                 sendMessage.peers[i+1] = (ip.strip(), getport(i+1))
         
     # TODO: spawn new thread for this. Send tcp message to localhost on error?
-    message['senderid'] = peernum
+    message['senderid'] = s.peerID
     message['opcode'] = opcode
 
     dprint("Sending message: %s to %s"% (str(message), str(peernum)))
@@ -57,7 +57,7 @@ def leaderElection(s):
 
     for peerid in s.peers:
         if peerid > s.peerID:
-            sendMessage('ELECTION', {}, peerid)
+            sendMessage(s, 'ELECTION', {}, peerid)
     
     timeleft = 2.0
     peersleft = len(filter(lambda x: x > s.peerID, s.peers))
@@ -73,13 +73,13 @@ def leaderElection(s):
                 peersleft -= 1
             elif msg['opcode'] == 'ELECTION':
                 if msg['senderid'] < s.peerID:
-                    sendMessage('OK', {}, msg['senderid'])
+                    sendMessage(s, 'OK', {}, msg['senderid'])
 
     if peersleft == len(filter(lambda x: x > s.peerID, s.peers)):
         dprint("I AM LEADER. MWAHAHAHAHAHA")
         s.leader = s.peerID
         for peerid in filter(lambda x: x < s.peerID, s.peers):
-            sendMessage('COORDINATOR', {}, peerid)
+            sendMessage(s, 'COORDINATOR', {}, peerid)
         return "discovery"
 
     dprint("waiting for message from our great leader")
@@ -103,7 +103,7 @@ def leaderElection(s):
     
     #     if msg['opcode'] == 'ELECTION':
     #         if msg['senderid']<s.peerID:
-    #             sendMessage('OK', {}, msg['senderid'])
+    #             sendMessage(s, 'OK', {}, msg['senderid'])
             
     #     elif msg['opcode'] == 'COORDINATOR':
     #         s.leader=msg['senderid']
@@ -120,7 +120,7 @@ def discovery(s):
         dprint("Recieved message: %s"%str(msg))
 
         if msg['opcode'] == 'ELECTION':
-            sendMessage('OK', {}, msg['senderid'])
+            sendMessage(s, 'OK', {}, msg['senderid'])
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
@@ -134,7 +134,7 @@ def synchronization(s):
         dprint("Recieved message: %s"%str(msg))
 
         if msg['opcode'] == 'ELECTION':
-            sendMessage('OK', {}, msg['senderid'])
+            sendMessage(s, 'OK', {}, msg['senderid'])
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
@@ -148,7 +148,7 @@ def broadcast(s):
         dprint("Recieved message: %s"%str(msg))
 
         if msg['opcode'] == 'ELECTION':
-            sendMessage('OK', {}, msg['senderid'])
+            sendMessage(s, 'OK', {}, msg['senderid'])
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
