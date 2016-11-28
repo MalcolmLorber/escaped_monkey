@@ -18,10 +18,23 @@ def sendMessage(message, peernum, peers):
     s.close()
 
 # Helper functions
+def getport(peerID):
+    return DEFAULTPORT + peerID
 
 # FSM States
 def leaderElection(s):
-    return "Discovery"
+    s.leader = None
+    while True:
+        con, address = s.accept()
+        msg = json.loads(con.recv(2**16))
+        
+        if msg['opcode'] == 'ELECTION':
+            pass
+        elif msg['opcode'] == 'COORDINATOR':
+            pass
+        elif msg['opcode'] == 'OK':
+            pass
+	return "Discovery"
 
 def discovery(s):
     return "Synchronization"
@@ -40,8 +53,16 @@ states = {"leader_election": leaderElection,
           "broadcast": broadcast}
 
 def main():
-    s = persist.Peer()
-
+    if len(sys.argv) != 2:
+        print("usage: %s ID"%sys.argv[0)]
+        
+    peerID = int(sys.argv[1])
+    
+    s = persist.Peer(peerID)
+    s.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.sock.bind(('0.0.0.0', getport(peerID)))
+    s.listen(10)
+        
     state = "leader_election"
     while True:
         state = states[state](s):

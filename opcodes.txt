@@ -1,0 +1,18 @@
+Opcodes:
+
+bully opcodes:
+      	 ELECTION
+	 COORDINATOR
+	 OK
+
+Zookeeper:
+	NEWEPOCH
+	FOLLERINFO
+	ACKEPOCH
+	ACKNEWEPOCH
+	COMMIT
+	ACK
+	DIFF
+	SNAP
+	TRUNK
+	
