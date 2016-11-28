@@ -13,11 +13,11 @@ import persist
 DEFAULTPORT = 60000
 
 # Utility functions
- def dprint(s):
-     if hasattr(dprint, 'number'):
-         sys.stderr.write("%02d: %s"%(dprint.number, s) + '\n')
-     else:
-         sys.stderr.write(str(s)+'\n')
+def dprint(s):
+    if hasattr(dprint, 'number'):
+        sys.stderr.write("%02d: %s"%(dprint.number, s) + '\n')
+    else:
+        sys.stderr.write(str(s)+'\n')
 
          
 def sendMsgA(addr, msg):
