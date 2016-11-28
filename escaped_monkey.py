@@ -34,13 +34,14 @@ def getport(peerID):
 def leaderElection(s):
     s.leader = None
 
-    for peerid in s.peers if peerid > s.peerID:
+    for peerid in s.peers:
+        if peerid > s.peerID:
             sendMessage('ELECTION', '', peerid)
 
     
     timeleft = 5.0
     peersleft = len(s.peers)
-    while timeleft > 0.01 and :
+    while timeleft > 0.01 and peersleft != 0:
         st = time.time()
         ir, outr, er = select.select(s.sock, [], [], timeleft)
         timeleft -= time.time() - st
