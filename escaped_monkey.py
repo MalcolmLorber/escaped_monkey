@@ -40,7 +40,7 @@ def leaderElection(s):
 
     
     timeleft = 5.0
-    peersleft = len(s.peers)
+    peersleft = len(filter(lambda x: x > s.peerID, s.peers))
     while timeleft > 0.01 and peersleft != 0:
         st = time.time()
         ir, outr, er = select.select(s.sock, [], [], timeleft)
@@ -50,6 +50,9 @@ def leaderElection(s):
             msg = json.loads(con.recv(2**16))
             if msg['opcode'] == 'OK':
                 peersleft -= 1
+            elif msg['opcode'] == 'ELECTION':
+                if msg['senderid'] < s.peerID:
+                    sendMessage('OK','',msg['senderid'])
                         
     while True:
         con, address = s.sock.accept()
@@ -58,10 +61,11 @@ def leaderElection(s):
         if msg['opcode'] == 'ELECTION':
             if msg['senderid']<s.peerID:
                 sendMessage('OK','',msg['senderid'])
-            pass
+            
         elif msg['opcode'] == 'COORDINATOR':
             s.leader=msg['senderid']
-            return "Discovery"
+            return "discovery"
+        
         elif msg['opcode'] == 'OK':
             pass
 	return "discovery"
@@ -99,7 +103,7 @@ def main():
                 
     s.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.sock.bind(('0.0.0.0', getport(peerID)))
-    s.listen(10)
+    s.sock.listen(10)
         
     state = "leader_election"
     while True:
