@@ -45,7 +45,20 @@ def sendMessage(s, opcode, message, peernum):
     dprint("Sending message: %s to %s"% (str(message), str(peernum)))
     t = threading.Thread(target=sendMsgA, args=(sendMessage.peers[peernum], json.dumps(message)))
     t.start()
-    sendMessage.threads.append(t)    
+    sendMessage.threads.append(t)
+
+def timeloop(socket, time):
+    timeleft = time
+    while timeleft > 0.01:
+        st = time.time()
+        ir, outr, er = select.select([socket], [], [], timeleft)
+        timeleft -= time.time() - st
+        for sock in ir:
+            con, addr = sock.accept()
+            msg = json.loads(con.recv(2**16))
+            dprint("Recieved message: %s"%str(msg))
+            yield msg
+
 
 # Helper functions
 def getport(peerID):
@@ -58,23 +71,17 @@ def leaderElection(s):
     for peerid in s.peers:
         if peerid > s.peerID:
             sendMessage(s, 'ELECTION', {}, peerid)
-    
-    timeleft = 2.0
-    peersleft = len(filter(lambda x: x > s.peerID, s.peers))
-    while timeleft > 0.01 and peersleft != 0:
-        st = time.time()
-        ir, outr, er = select.select([s.sock], [], [], timeleft)
-        timeleft -= time.time() - st
-        for sock in ir:
-            con, addr = sock.accept()
-            msg = json.loads(con.recv(2**16))
-            dprint("Recieved message: %s"%str(msg))
-            if msg['opcode'] == 'OK':
-                peersleft -= 1
-            elif msg['opcode'] == 'ELECTION':
-                if msg['senderid'] < s.peerID:
-                    sendMessage(s, 'OK', {}, msg['senderid'])
 
+    peersleft = len(filter(lambda x: x > s.peerID, s.peers))
+    for msg in timeloop(s.sock):
+        if msg['opcode'] == 'OK':
+            peersleft -= 1
+            if peersleft == 0:
+                break
+        elif msg['opcode'] == 'ELECTION':
+            if msg['senderid'] < s.peerID:
+                sendMessage(s, 'OK', {}, msg['senderid'])
+                
     if peersleft == len(filter(lambda x: x > s.peerID, s.peers)):
         dprint("I AM LEADER. MWAHAHAHAHAHA")
         s.leader = s.peerID
@@ -83,37 +90,27 @@ def leaderElection(s):
         return "discovery"
 
     dprint("waiting for message from our great leader")
-    timeleft = 2.0
-    while timeleft > 0.01:
-        st = time.time()
-        ir, outr, er = select.select([s.sock], [], [], timeleft)
-        timeleft -= time.time() - st
-        for sock in ir:
-            con, addr = sock.accept()
-            msg = json.loads(con.recv(2**16))
-            dprint("Recieved message: %s"%str(msg))
-            if msg['opcode'] == 'COORDINATOR':
-                s.leader = msg['senderid']
-                return "discovery"
-            else:
-                dprint("message extranious")
+    
+    for msg in timeloop(s.sock, 2.0):
+        if msg['opcode'] == 'COORDINATOR':
+            s.leader = msg['senderid']
+            return "discovery"
+        else:
+            dprint("extranious message")
+            
     return "leader_election"
-            
-    
-    
-    #     if msg['opcode'] == 'ELECTION':
-    #         if msg['senderid']<s.peerID:
-    #             sendMessage(s, 'OK', {}, msg['senderid'])
-            
-    #     elif msg['opcode'] == 'COORDINATOR':
-    #         s.leader=msg['senderid']
-    #         return "discovery"
-        
-    #     elif msg['opcode'] == 'OK':
-    #         pass
-    #     return "discovery"
 
+    
+def discovery_follower(s):
+    sendMessage(s, 'FOLLOWERINFO', {'acceptedEpoch': s.acceptedEpoch}, s.leader)                
+    
+    
 def discovery(s):
+    # if s.peerID == s.leader:
+    #     return discovery_leader(s)
+    # else:
+    #     return discovery_follower(s)
+            
     while True:
         con, address = s.sock.accept()
         msg = json.loads(con.recv(2**16))
