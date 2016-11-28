@@ -42,6 +42,7 @@ def sendMessage(opcode, message, peernum):
     message['senderid'] = peernum
     message['opcode'] = opcode
 
+    dprint("Sending message: %s"% str(message))
     t = threading.Thread(target=sendMsgA, args=(sendMessage.peers[peernum], json.dumps(message)))
     t.start()
     sendMessage.threads.append(t)    
@@ -57,7 +58,6 @@ def leaderElection(s):
     for peerid in s.peers:
         if peerid > s.peerID:
             sendMessage('ELECTION', {}, peerid)
-
     
     timeleft = 2.0
     peersleft = len(filter(lambda x: x > s.peerID, s.peers))
