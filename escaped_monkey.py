@@ -105,4 +105,4 @@ def main():
         
     state = "leader_election"
     while True:
-        state = states[state](s):
+        state = states[state](s)
