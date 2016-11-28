@@ -36,7 +36,7 @@ def leaderElection(s):
 
     for peerid in s.peers:
         if peerid > s.peerID:
-            sendMessage('ELECTION', '', peerid)
+            sendMessage('ELECTION', {}, peerid)
 
     
     timeleft = 5.0
@@ -52,7 +52,7 @@ def leaderElection(s):
                 peersleft -= 1
             elif msg['opcode'] == 'ELECTION':
                 if msg['senderid'] < s.peerID:
-                    sendMessage('OK','',msg['senderid'])
+                    sendMessage('OK', {}, msg['senderid'])
                         
     while True:
         con, address = s.sock.accept()
@@ -60,7 +60,7 @@ def leaderElection(s):
         
         if msg['opcode'] == 'ELECTION':
             if msg['senderid']<s.peerID:
-                sendMessage('OK','',msg['senderid'])
+                sendMessage('OK', {}, msg['senderid'])
             
         elif msg['opcode'] == 'COORDINATOR':
             s.leader=msg['senderid']
@@ -95,12 +95,11 @@ def main():
     s = persist.Peer(peerID)
 
     # Initilize the list of peers
-    if not hasattr(sendMessage, 'peers'):
-        s.peers = {}
-        with open('peers.txt') as f:
-            for i, ip in enumerate(f.read().split('\n')):
-                s.peers[i] = (ip.strip(), getport(i))
-                
+    s.peers = {}
+    with open('peers.txt') as f:
+        for i, ip in enumerate(f.read().split('\n')):
+            s.peers[i] = (ip.strip(), getport(i))
+            
     s.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.sock.bind(('0.0.0.0', getport(peerID)))
     s.sock.listen(10)
