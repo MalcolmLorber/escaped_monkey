@@ -47,8 +47,8 @@ def sendMessage(s, opcode, message, peernum):
     t.start()
     sendMessage.threads.append(t)
 
-def timeloop(socket, time):
-    timeleft = time
+def timeloop(socket, t):
+    timeleft = t
     while timeleft > 0.01:
         st = time.time()
         ir, outr, er = select.select([socket], [], [], timeleft)
