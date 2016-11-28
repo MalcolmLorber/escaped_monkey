@@ -103,25 +103,62 @@ def leaderElection(s):
 
     
 def discovery_follower(s):
-    sendMessage(s, 'FOLLOWERINFO', {'acceptedEpoch': s.acceptedEpoch}, s.leader)                
+    sendMessage(s, 'FOLLOWERINFO', {'acceptedEpoch': s.acceptedEpoch}, s.leader)
+    for msg in timeloop(s.sock, 3.0):
+        if msg['opcode'] == NEWEPOCH and msg['senderid'] == s.leader:
+            if msg['eprime'] > s.acceptedEpoch:
+                s.acceptedEpoch = msg['eprime']
+                sendMessage(s, 'ACKEPOCH', {'currentEpoch': s.currentEpoch,
+                                            'history': s.history,
+                                            'lastZxid': s.lastZxid}, s.leader)
+                return 'synchronization'
+            if msg['eprime'] < s.acceptedEpoch:
+                return 'leader_election'
+        elif msg['opcode'] == 'ELECTION':
+            sendMessage(s, 'OK', {}, msg['senderid'])
+            return "leader_election"
+        elif msg['opcode'] == 'COORDINATOR':
+            s.leader = msg['senderid']
     
+    return 'leader_election'
+
+def discovery_leader(s):
+    peersleft = len(s.peers) - 1
+    epochnumbers = []
+    quorum = []
+    for msg in timeloop(s.sock, 2.0):
+        if msg['opcode'] == 'FOLLOWERINFO':
+            epochnumbers.append(msg['acceptedEpoch'])
+            quorum.append(msg['senderid'])
+            peersleft -= 1
+            if peersleft == 0:
+                break
+            
+        elif msg['opcode'] == 'ELECTION':
+            sendMessage(s, 'OK', {}, msg['senderid'])
+            return "leader_election"
+        elif msg['opcode'] == 'COORDINATOR':
+            s.leader = msg['senderid']
+
+            
+    eprime = max(epochnumbers) + 1
+    for i in quorum:
+        sendMessage(s, 'NEWEPOCH', {'eprime': eprime}, i)
+
+    for msg in timeloop(s.sock, 2.0)
     
 def discovery(s):
-    # if s.peerID == s.leader:
-    #     return discovery_leader(s)
-    # else:
-    #     return discovery_follower(s)
+    if s.peerID == s.leader:
+        return discovery_leader(s)
+    else:
+        return discovery_follower(s)
             
     while True:
         con, address = s.sock.accept()
         msg = json.loads(con.recv(2**16))
         dprint("Recieved message: %s"%str(msg))
 
-        if msg['opcode'] == 'ELECTION':
-            sendMessage(s, 'OK', {}, msg['senderid'])
-            return "leader_election"
-        elif msg['opcode'] == 'COORDINATOR':
-            s.leader = msg['senderid']
+        
         
     return "synchronization"
 
