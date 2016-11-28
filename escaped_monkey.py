@@ -78,7 +78,7 @@ def leaderElection(s):
     if peersleft == len(filter(lambda x: x > s.peerID, s.peers)):
         dprint("I AM LEADER. MWAHAHAHAHAHA")
         s.leader = s.peerID
-        for peerid in filter(lambda x: x > s.peerID, s.peers):
+        for peerid in filter(lambda x: x < s.peerID, s.peers):
             sendMessage('COORDINATOR', {}, peerid)
         return "discovery"
 
