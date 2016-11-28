@@ -90,7 +90,7 @@ def leaderElection(s):
         timeleft -= time.time() - st
         for sock in ir:
             con, addr = sock.accept()
-            msg = json.loads(con.cerv(2**16))
+            msg = json.loads(con.recv(2**16))
             dprint("Recieved message: %s"%str(msg))
             if msg['opcode'] == 'COORDINATOR':
                 s.leader = msg['senderid']
