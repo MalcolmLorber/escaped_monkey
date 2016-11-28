@@ -93,7 +93,7 @@ def leaderElection(s):
             msg = json.loads(con.cerv(2**16))
             dprint("Recieved message: %s"%str(msg))
             if msg['opcode'] == 'COORDINATOR':
-                s.leader = msg.['senderid']
+                s.leader = msg['senderid']
                 return "discovery"
             else:
                 dprint("message extranious")
