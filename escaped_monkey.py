@@ -13,6 +13,13 @@ import persist
 DEFAULTPORT = 60000
 
 # Utility functions
+ def dprint(s):
+     if hasattr(dprint, 'number'):
+         sys.stderr.write("%02d: %s"%(dprint.number, s) + '\n')
+     else:
+         sys.stderr.write(str(s)+'\n')
+
+         
 def sendMsgA(addr, msg):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,7 +27,7 @@ def sendMsgA(addr, msg):
         s.send(msg)
         s.close()
     except:
-        print("could not send message to %s"%str(addr))
+        dprint("could not send message to %s"%str(addr))
         
 def sendMessage(opcode, message, peernum):
     """Sends a message without blocking. May throw error on timeout"""
@@ -61,6 +68,7 @@ def leaderElection(s):
         for sock in ir:
             con, addr = sock.accept()
             msg = json.loads(con.recv(2**16))
+            dprint("Recieved message: %s" str(msg))
             if msg['opcode'] == 'OK':
                 peersleft -= 1
             elif msg['opcode'] == 'ELECTION':
@@ -70,6 +78,7 @@ def leaderElection(s):
     while True:
         con, address = s.sock.accept()
         msg = json.loads(con.recv(2**16))
+        dprint("Recieved message: %s" str(msg))
         
         if msg['opcode'] == 'ELECTION':
             if msg['senderid']<s.peerID:
@@ -101,7 +110,7 @@ states = {"leader_election": leaderElection,
 
 def main():
     if len(sys.argv) != 2:
-        print("usage: %s ID"%sys.argv[0])
+        dprint("usage: %s ID"%sys.argv[0])
 
     peerID = int(sys.argv[1])
     
@@ -119,6 +128,7 @@ def main():
         
     state = "leader_election"
     while True:
+        dprint("Going to state: %s" state)
         state = states[state](s)
 
 if __name__ == "__main__":
