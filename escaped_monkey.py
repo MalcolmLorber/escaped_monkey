@@ -113,6 +113,7 @@ def main():
         dprint("usage: %s ID"%sys.argv[0])
 
     peerID = int(sys.argv[1])
+    dprint.number = peerID
     
     s = persist.Peer(peerID)
 
@@ -128,7 +129,7 @@ def main():
         
     state = "leader_election"
     while True:
-        dprint("Going to state: %s" state)
+        dprint("Going to state: %s"%state)
         state = states[state](s)
 
 if __name__ == "__main__":
