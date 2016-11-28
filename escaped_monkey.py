@@ -100,11 +100,7 @@ def leaderElection(s):
     return "leader_election"
             
     
-    # while True:
-    #     con, address = s.sock.accept()
-    #     msg = json.loads(con.recv(2**16))
-    #     dprint("Recieved message: %s"%str(msg))
-        
+    
     #     if msg['opcode'] == 'ELECTION':
     #         if msg['senderid']<s.peerID:
     #             sendMessage('OK', {}, msg['senderid'])
@@ -118,12 +114,39 @@ def leaderElection(s):
     #     return "discovery"
 
 def discovery(s):
+    while True:
+        con, address = s.sock.accept()
+        msg = json.loads(con.recv(2**16))
+        dprint("Recieved message: %s"%str(msg))
+
+        if msg['opcode'] == 'ELECTION':
+            sendMessage('OK', {}, msg['senderid'])
+            return "ledaer_election"
+        
     return "synchronization"
 
 def synchronization(s):
+    while True:
+        con, address = s.sock.accept()
+        msg = json.loads(con.recv(2**16))
+        dprint("Recieved message: %s"%str(msg))
+
+        if msg['opcode'] == 'ELECTION':
+            sendMessage('OK', {}, msg['senderid'])
+            return "ledaer_election"
+    
     return "broadcast"
 
 def broadcast(s):
+    while True:
+        con, address = s.sock.accept()
+        msg = json.loads(con.recv(2**16))
+        dprint("Recieved message: %s"%str(msg))
+
+        if msg['opcode'] == 'ELECTION':
+            sendMessage('OK', {}, msg['senderid'])
+            return "ledaer_election"
+    
     return "leader_election"
 
 # Janky finite state machine. Could probably just return functions
