@@ -42,7 +42,7 @@ def sendMessage(opcode, message, peernum):
     message['senderid'] = peernum
     message['opcode'] = opcode
 
-    dprint("Sending message: %s"% str(message))
+    dprint("Sending message: %s to %s"% (str(message), str(peernum)))
     t = threading.Thread(target=sendMsgA, args=(sendMessage.peers[peernum], json.dumps(message)))
     t.start()
     sendMessage.threads.append(t)    
