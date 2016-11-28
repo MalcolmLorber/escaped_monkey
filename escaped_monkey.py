@@ -68,7 +68,7 @@ def leaderElection(s):
         for sock in ir:
             con, addr = sock.accept()
             msg = json.loads(con.recv(2**16))
-            dprint("Recieved message: %s" str(msg))
+            dprint("Recieved message: %s"%str(msg))
             if msg['opcode'] == 'OK':
                 peersleft -= 1
             elif msg['opcode'] == 'ELECTION':
@@ -78,7 +78,7 @@ def leaderElection(s):
     while True:
         con, address = s.sock.accept()
         msg = json.loads(con.recv(2**16))
-        dprint("Recieved message: %s" str(msg))
+        dprint("Recieved message: %s"%str(msg))
         
         if msg['opcode'] == 'ELECTION':
             if msg['senderid']<s.peerID:
