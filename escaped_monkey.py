@@ -43,6 +43,8 @@ def leaderElection(s):
         msg = json.loads(con.recv(2**16))
         
         if msg['opcode'] == 'ELECTION':
+            if msg['senderid']<s.peerID:
+                sendMessage('OK','',msg['senderid'])
             pass
         elif msg['opcode'] == 'COORDINATOR':
             pass
