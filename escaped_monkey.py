@@ -56,7 +56,7 @@ def leaderElection(s):
     peersleft = len(filter(lambda x: x > s.peerID, s.peers))
     while timeleft > 0.01 and peersleft != 0:
         st = time.time()
-        ir, outr, er = select.select(s.sock, [], [], timeleft)
+        ir, outr, er = select.select([s.sock], [], [], timeleft)
         timeleft -= time.time() - st
         for sock in ir:
             con, addr = sock.accept()
