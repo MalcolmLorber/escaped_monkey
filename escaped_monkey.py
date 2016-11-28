@@ -121,7 +121,7 @@ def discovery(s):
 
         if msg['opcode'] == 'ELECTION':
             sendMessage('OK', {}, msg['senderid'])
-            return "ledaer_election"
+            return "leader_election"
         
     return "synchronization"
 
@@ -133,7 +133,7 @@ def synchronization(s):
 
         if msg['opcode'] == 'ELECTION':
             sendMessage('OK', {}, msg['senderid'])
-            return "ledaer_election"
+            return "leader_election"
     
     return "broadcast"
 
@@ -145,7 +145,7 @@ def broadcast(s):
 
         if msg['opcode'] == 'ELECTION':
             sendMessage('OK', {}, msg['senderid'])
-            return "ledaer_election"
+            return "leader_election"
     
     return "leader_election"
 
