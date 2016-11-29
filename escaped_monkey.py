@@ -261,7 +261,7 @@ def synchronization_follower(s):
                         #TODO: sort before adding to history
                         s.history.append((s.currentEpoch, proposal))
                         #TODO: make dict?
-                        noncommited_txns.append(proposal)
+                        noncommited_txns[json.loads(proposal)[1][1]] = json.loads(proposal)[1][0]
                         
                     sendMessage(s, 'ACKNEWLEADER', {'eprime': msg['eprime'],
                                                     'history': msg['history']}, s.leader)
@@ -279,7 +279,7 @@ def synchronization_follower(s):
         if msg['opcode'] == 'COMMIT':
             if msg['senderid'] == s.leader:
                 #TODO: sort noncommited_txns
-                for tx in noncommited_txns:
+                for tx in sorted(noncommited_txns.items()):
                     deliver(s, tx)
                 return 'broadcast'
 
