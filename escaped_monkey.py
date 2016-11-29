@@ -312,7 +312,7 @@ def broadcast_leader(s):
                 ackcounts[event] = 1
                 s.history.append(event)
                 
-            if msg['opcode'] == 'ACKEVENT':
+            elif msg['opcode'] == 'ACKEVENT':
                 if not msg['event'] in ackcounts:
                     continue
                 
@@ -325,16 +325,16 @@ def broadcast_leader(s):
                         sendMessage(s, 'COMMITTX', {'event': msg['event']}, i)
                         deliver(s, msg['event'])
                         
-            if msg['opcode'] == 'FOLLOWERINFO':
+            elif msg['opcode'] == 'FOLLOWERINFO':
                 sendMessage(s, 'NEWEPOCH', {'eprime': s.eprime}, msg['senderid'])
                 sendMessage(s, 'NEWLEADER', {'eprime': s.eprime, 'history': s.history}, msg['senderid'])
 
-            if msg['opcode'] == 'ACKNEWLEADER':
+            elif msg['opcode'] == 'ACKNEWLEADER':
                 sendMessage(s, 'COMMIT', {}, msg['senderid'])
                 if not msg['senderid'] in s.quorum:
                     s.quorum.append(msg['senderid'])
 
-            if msg['opcode'] == 'ELECTION':
+            elif msg['opcode'] == 'ELECTION':
                 sendMessage(s, 'OK', {}, msg['senderid'])
                 return "leader_election"
             
@@ -357,19 +357,22 @@ def broadcast_follower(s):
                 noncommited_txns[json.loads(msg['event'][1][1])] = json.loads(msg['event'][1][0])
                 sendMessage(s, 'ACKEVENT', {'event': msg['event']}, s.leader)
 
-            if msg['opcode'] == 'COMMITTX':
+            elif msg['opcode'] == 'COMMITTX':
                 to_commit_txns[json.loads(msg['event'][1][1])]=json.loads(msg['event'][1][0])
                 while min(noncommitted_txns) == min(to_commit_txns):
                     deliver(s, to_commit_txns[min(to_commit_txns)])
                     del noncommited_txns[min(noncommited_txns)]
                     del to_commit_txns[min(to_commit_txns)]
                             
-            if msg['opcode'] == 'ELECTION':
+            elif msg['opcode'] == 'ELECTION':
                 sendMessage(s, 'OK', {}, msg['senderid'])
                 return "leader_election"
             elif msg['opcode'] == 'COORDINATOR':
                 s.leader = msg['senderid']
                 return 'discovery'
+            
+            elif msg['opcode'] == 'EVENT':
+                sendMessage(s, 'EVENT', {'event': msg['event'], s.leader)
 
         if not sendMessage.peerStatus[s.leader]:
             return 'leader_election'
