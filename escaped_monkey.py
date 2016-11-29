@@ -153,7 +153,7 @@ def discovery_leader(s):
             s.leader = msg['senderid']
             return 'discovery'
 
-    connectedPeers = filter(lamba x: sendMessage.peerStatus[x], sendMessage.peerStatus)
+    connectedPeers = filter(lambda x: sendMessage.peerStatus[x], sendMessage.peerStatus)
     if peersleft >= len(connectedPeers)/2.0:
         dprint("Failed to achive quorum. Peersleft: %d"%(peersleft))
         return 'leader_election'
