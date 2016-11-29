@@ -67,8 +67,7 @@ def getport(peerID):
 # FSM States
 def leaderElection(s):
     s.leader = None
-    s.connected_peers = {}
-    
+        
     for peerid in s.peers:
         if peerid > s.peerID:
             sendMessage(s, 'ELECTION', {}, peerid)
@@ -82,8 +81,6 @@ def leaderElection(s):
                 break
         elif msg['opcode'] == 'ELECTION':
             dprint("Recieved ELECTION from %s, adding to connected"%msg['senderid'])
-            s.connected_peers[msg['senderid']]=''
-            print s.connected_peers
             if msg['senderid'] < s.peerID:
                 sendMessage(s, 'OK', {}, msg['senderid'])
                         
@@ -101,7 +98,6 @@ def leaderElection(s):
             s.leader = msg['senderid']
             return "discovery"
         elif msg['opcode'] == 'ELECTION':
-            s.connected_peers[msg['senderid']] = ''
             if msg['senderid'] < s.peerID:
                 sendMessage(s, 'OK', {}, msg['senderid'])
         else:
@@ -123,7 +119,6 @@ def discovery_follower(s):
             if msg['eprime'] < s.acceptedEpoch:
                 return 'leader_election'
         elif msg['opcode'] == 'ELECTION':
-            s.connected_peers[msg['senderid']] = ''
             sendMessage(s, 'OK', {}, msg['senderid'])
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
@@ -135,7 +130,6 @@ def discovery_leader(s):
     peersleft = len(s.peers) - 1
     epochnumbers = []
     quorum = {}
-    print s.connected_peers
     for msg in timeloop(s.sock, 2.0):
         if msg['opcode'] == 'FOLLOWERINFO':
             epochnumbers.append(msg['acceptedEpoch'])
@@ -145,14 +139,14 @@ def discovery_leader(s):
                 break
             
         elif msg['opcode'] == 'ELECTION':
-            s.connected_peers[msg['senderid']] = ''
             sendMessage(s, 'OK', {}, msg['senderid'])
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
 
-    if peersleft >= len(s.connected_peers)/2.0:
-        return 'leader_election'
+    if peersleft >= (len(s.peers)-1)/2.0:
+        print("Failed to achive quorum")
+        return 'leader election'
 
     eprime = max(epochnumbers) + 1
     for i in quorum:
@@ -169,12 +163,11 @@ def discovery_leader(s):
 
     if peersleft != 0:
         return 'leader_election'
+
+    # TODO: choose f
     return 'synchronization'
 
-    
-            
-            
-    
+        
 def discovery(s):
     if s.peerID == s.leader:
         return discovery_leader(s)
@@ -187,7 +180,6 @@ def discovery(s):
         dprint("Recieved message: %s"%str(msg))
 
         
-        
     return "synchronization"
 
 def synchronization(s):
@@ -197,7 +189,6 @@ def synchronization(s):
         dprint("Recieved message: %s"%str(msg))
 
         if msg['opcode'] == 'ELECTION':
-            s.connected_peers[msg['senderid']] = ''
             sendMessage(s, 'OK', {}, msg['senderid'])
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
@@ -212,7 +203,6 @@ def broadcast(s):
         dprint("Recieved message: %s"%str(msg))
 
         if msg['opcode'] == 'ELECTION':
-            s.connected_peers[msg['senderid']] = ''
             sendMessage(s, 'OK', {}, msg['senderid'])
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
