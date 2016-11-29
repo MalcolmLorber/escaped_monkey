@@ -83,7 +83,12 @@ def leaderElection(s):
             dprint("Recieved ELECTION from %s, adding to connected"%msg['senderid'])
             if msg['senderid'] < s.peerID:
                 sendMessage(s, 'OK', {}, msg['senderid'])
-                        
+        elif msg['opcode'] == 'COORDINATOR':
+            s.leader = msg['senderid']
+            return "discovery"  
+        else:
+            dprint("extranious message")
+                    
     if peersleft == len(filter(lambda x: x > s.peerID, s.peers)):
         dprint("I AM LEADER. MWAHAHAHAHAHA")
         s.leader = s.peerID
@@ -147,7 +152,7 @@ def discovery_leader(s):
             return 'discovery'
 
     if peersleft >= len(s.peers)/2.0:
-        print("Failed to achive quorum. Peersleft: %d"%(peersleft))
+        dprint("Failed to achive quorum. Peersleft: %d"%(peersleft))
         return 'leader_election'
 
     eprime = max(epochnumbers) + 1
