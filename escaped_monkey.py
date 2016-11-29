@@ -269,6 +269,7 @@ def discovery_leader(s):
 
         
 def discovery(s):
+    global filesystem
     filesystem = {}
     if s.peerID == s.leader:
         return discovery_leader(s)
