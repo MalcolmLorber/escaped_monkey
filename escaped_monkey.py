@@ -76,6 +76,7 @@ def timeloop(socket, t):
         for sock in ir:
             con, addr = sock.accept()
             msg = json.loads(con.recv(2**16))
+            msg['con'] = con
             if msg['opcode'] != 'HEARTBEAT':
                 dprint("Recieved message: %s"%str(msg))
             yield msg
@@ -87,6 +88,10 @@ def getport(peerID):
 
 # Filesystem functions
 def deliver(s, message):
+    m = json.loads(message)
+    if m['id'] in s.clients:
+        s.clients[m['id']].send("Message %s delivered"%str(message))
+        s.clients[m['id']].close()
     dprint("DELIVERING: %s"%str(message))
 
 # FSM States
@@ -327,6 +332,8 @@ def broadcast_leader(s):
         for msg in timeloop(s.sock, TIMEOUT_HEARTBEAT_LEADER):
             
             if msg['opcode'] == 'EVENT':
+                if msg['senderid'] == 0:
+                    s.clients[json.loads(msg['event'])['id']] = msg['con']
                 counter += 1
                 event = json.dumps((s.eprime, (msg['event'],  (s.eprime, counter))))
                 for i in s.quorum:
@@ -400,6 +407,8 @@ def broadcast_follower(s):
                 return 'discovery'
             
             elif msg['opcode'] == 'EVENT':
+                if msg['senderid'] == 0:
+                    s.clients[json.loads(msg['event'])['id']] = msg['con']
                 sendMessage(s, 'EVENT', {'event': msg['event']}, s.leader)
 
         if not sendMessage.peerStatus[s.leader]:
@@ -429,6 +438,7 @@ def main():
 
     # Initilize the list of peers
     s.peers = {}
+    s.clients = {}
     with open('peers.txt') as f:
         for i, ip in enumerate(filter(lambda x: x != '', f.read().split('\n'))):
             s.peers[i+1] = (ip.strip(), getport(i+1))

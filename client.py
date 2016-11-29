@@ -64,6 +64,7 @@ while True:
     command = {}
     command['opcode'] = parts[0]
     command['filename'] = parts[1]
+    command['id'] = time.time()
     if parts[0] == 'append':
         command['line'] = ' '.join(parts[2:])
         
