@@ -85,7 +85,7 @@ def getport(peerID):
 
 # Filesystem functions
 def deliver(s, message):
-    pass
+    dprint("DELIVERING: %s"%message)
 
 # FSM States
 def leaderElection(s):
