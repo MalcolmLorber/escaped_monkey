@@ -87,12 +87,44 @@ def getport(peerID):
     return DEFAULTPORT + peerID
 
 # Filesystem functions
+filesystem = {}
 def deliver(s, message):
+    return_string = ''
     dprint("DELIVERING: %s"%str(message))
     m = json.loads(message)
+    if m['opcode'] == 'create':
+        if m['filename'] in filesystem:
+            return_string = "File %s exists"%m['filename']
+        else:
+            filesystem[m['filename']] = ''
+            return_string = "Done"
+            
+    elif m['opcode'] == 'delete':
+        if not m['filename'] in filesystem:
+            return_string = "File %s does not exist"%m['filename']
+        else:
+            del filesystem[m['filename']]
+            return_string = "Done"
+
+    elif m['opcode'] == 'read':
+        if not m['filename'] in filesystem:
+            return_string = "File %s does not exist"%m['filename']
+        else:
+            return_string = filesystem[m['filename']]
+
+    elif m['opcode'] == 'append':
+        if not m['filename'] in filesystem:
+            return_string = "File %s does not exist"%m['filename']
+        else:
+            filesystem[m['filename']] += m['line']
+            filesystem[m['filename']] += '\n'
+            return_string = "Done."
+    
+        
     if m['id'] in s.clients:
-        s.clients[m['id']].send("Message %s delivered"%str(message))
+        s.clients[m['id']].send(return_string)
         s.clients[m['id']].close()
+        del s.clients[m['id']]
     
 
 # FSM States
