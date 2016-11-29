@@ -31,6 +31,7 @@ def sendMsgA(addr, msg, peerID):
         s.connect(addr)
         s.send(msg)
         print(s.recv(1024))
+        s.close()
     except:
         dprint("could not send message to %s"%str(addr))
         
