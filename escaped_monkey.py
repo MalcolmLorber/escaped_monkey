@@ -74,16 +74,18 @@ def leaderElection(s):
             sendMessage(s, 'ELECTION', {}, peerid)
 
     peersleft = len(filter(lambda x: x > s.peerID, s.peers))
-    if peersleft != 0:
-        for msg in timeloop(s.sock, 2.0):
-            if msg['opcode'] == 'OK':
-                peersleft -= 1
-                if peersleft == 0:
-                    break
-            elif msg['opcode'] == 'ELECTION':
-                s.connected_peers[msg['senderid']]=''
-                if msg['senderid'] < s.peerID:
-                    sendMessage(s, 'OK', {}, msg['senderid'])
+    #if peersleft != 0:
+    for msg in timeloop(s.sock, 2.0):
+        if msg['opcode'] == 'OK':
+            peersleft -= 1
+            if peersleft == 0:
+                break
+        elif msg['opcode'] == 'ELECTION':
+            dprint("Recieved ELECTION from %s, adding to connected"%msg['senderid'])
+            s.connected_peers[msg['senderid']]=''
+            print s.connected_peers
+            if msg['senderid'] < s.peerID:
+                sendMessage(s, 'OK', {}, msg['senderid'])
                         
     if peersleft == len(filter(lambda x: x > s.peerID, s.peers)):
         dprint("I AM LEADER. MWAHAHAHAHAHA")
@@ -133,10 +135,11 @@ def discovery_leader(s):
     peersleft = len(s.peers) - 1
     epochnumbers = []
     quorum = {}
+    print s.connected_peers
     for msg in timeloop(s.sock, 2.0):
         if msg['opcode'] == 'FOLLOWERINFO':
             epochnumbers.append(msg['acceptedEpoch'])
-            quorum[msg['senderid']] = ''
+            quorum[msg['senderid']] = {}
             peersleft -= 1
             if peersleft == 0:
                 break
@@ -166,6 +169,7 @@ def discovery_leader(s):
 
     if peersleft != 0:
         return 'leader_election'
+    return 'synchronization'
 
     
             
