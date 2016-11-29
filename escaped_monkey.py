@@ -256,7 +256,7 @@ def synchronization_leader(s):
         for item in s.history:
             if item == '':
                 continue
-            deliver(s, json.decode(item)[1][0])
+            deliver(s, json.loads(item)[1][0])
             
         
     return 'broadcast'
@@ -342,7 +342,7 @@ def broadcast_leader(s):
                         if i == s.peerID:
                             continue
                         sendMessage(s, 'COMMITTX', {'event': msg['event']}, i)
-                        deliver(s, msg['event'])
+                        deliver(s, json.loads(msg['event'])[1][0])
                     del ackcounts[msg['event']]
                         
             elif msg['opcode'] == 'FOLLOWERINFO':
