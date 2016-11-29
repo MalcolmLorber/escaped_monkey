@@ -139,7 +139,7 @@ def discovery_leader(s):
     peersleft = len(s.peers) - 1
     epochnumbers = []
     quorum = {}
-    contacts = 0
+    contacts = 1
     for msg in timeloop(s.sock, 2.0):
         if msg['opcode'] == 'FOLLOWERINFO':
             epochnumbers.append(msg['acceptedEpoch'])
@@ -158,7 +158,7 @@ def discovery_leader(s):
 
     connectedPeers = filter(lambda x: sendMessage.peerStatus[x], sendMessage.peerStatus)
     if contacts <= len(connectedPeers)/2.0:
-        dprint("Failed to achive quorum. Peersleft: %d"%(peersleft))
+        dprint("Failed to achive quorum. Contacts: %d, ConnectedPeers: %s"%(contacts, connectedPeers))
         return 'leader_election'
 
     eprime = max(epochnumbers) + 1
