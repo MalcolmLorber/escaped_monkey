@@ -142,12 +142,12 @@ def discovery_follower(s):
 def discovery_leader(s):
     peersleft = len(s.peers) - 1
     epochnumbers = []
-    quorum = {}
+    s.quorum = {}
     contacts = 1
     for msg in timeloop(s.sock, 2.0):
         if msg['opcode'] == 'FOLLOWERINFO':
             epochnumbers.append(msg['acceptedEpoch'])
-            quorum[msg['senderid']] = {}
+            s.quorum[msg['senderid']] = {}
             peersleft -= 1
             contacts += 1
             if peersleft == 0:
@@ -166,26 +166,30 @@ def discovery_leader(s):
         return 'leader_election'
 
     eprime = max(epochnumbers) + 1
-    for i in quorum:
+    for i in s.quorum:
         sendMessage(s, 'NEWEPOCH', {'eprime': eprime}, i)
 
-    peersleft = len(quorum)
+    peersleft = len(s.quorum)
     for msg in timeloop(s.sock, 2.0):
         if msg['opcode'] == 'ACKEPOCH':
-            if msg['senderid'] in quorum:
-                quorum[msg['senderid']]['currentEpoch'] = msg['currentEpoch']
-                quorum[msg['senderid']]['lastZxid'] = msg['lastZxid']
-                quorum[msg['senderid']]['history'] = msg['history']
+            if msg['senderid'] in s.quorum:
+                s.quorum[msg['senderid']]['currentEpoch'] = msg['currentEpoch']
+                s.quorum[msg['senderid']]['lastZxid'] = msg['lastZxid']
+                s.quorum[msg['senderid']]['history'] = msg['history']
                 peersleft -= 1
 
     if peersleft != 0:
         return 'leader_election'
 
+    
     # TODO: choose f
-    highestEpoch = max([quorum[i]['currentEpoch'] for i in quorum])
-    hEg = filter(lambda x: quorum[x]['currentEpoch'] == highestEpoch, quorum)
-    highestZxid = max([quorum[i]['lastZxid'] for i in quorum])
-    hZg = filter(lambda x: quorum[x]['lastZxid'] == highestEpoch, quorum)
+    q = s.quorum + {self.peerID: {'currentEpoch': s.currentEpoch,
+                                  'lastZxid': lastZxid,
+                                  'history': history[:]}}
+    highestEpoch = max([q[i]['currentEpoch'] for i in q])
+    hEg = filter(lambda x: q[x]['currentEpoch'] == highestEpoch, q)
+    highestZxid = max([q[i]['lastZxid'] for i in q])
+    hZg = filter(lambda x: q[x]['lastZxid'] == highestEpoch, s)
     f = hZg[0]
     return 'synchronization'
 
