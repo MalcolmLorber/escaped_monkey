@@ -32,20 +32,20 @@ class Peer(object):
 
         # TODO: load from disk on init
         if os.path.isfile('acceptedEpoch%d'%self.peerID):
-            with open('acceptedEpoch%d'%self.peerID,'w') as f:
+            with open('acceptedEpoch%d'%self.peerID,'r') as f:
                 self._acceptedEpoch = int(f.read())
         else:
             self._acceptedEpoch = 0
 
         if os.path.isfile('currentEpoch%d'%self.peerID):
-            with open('currentEpoch%d'%self.peerID,'w') as f:
+            with open('currentEpoch%d'%self.peerID,'r') as f:
                 self._currentEpoch = int(f.read())
         else:
             self._currentEpoch = 0
 
 
         if os.path.isfile('lastZxid%d'%self.peerID):
-            with open('lastZxid%d'%self.peerID,'w') as f:
+            with open('lastZxid%d'%self.peerID,'r') as f:
                 self._lastZxid = int(f.read())
         else:
             self._lastZxid = 0
