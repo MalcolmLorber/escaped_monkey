@@ -257,6 +257,8 @@ def synchronization_follower(s):
                 if msg['eprime'] == s.acceptedEpoch:
                     recvdLeader = True
                     s.currentEpoch = msg['eprime']
+                    # purge history
+                    s.history.purge()
                     for proposal in msg['history']:
                         #TODO: sort before adding to history
                         s.history.append(json.dumps((s.currentEpoch, json.loads(proposal)[1])))
@@ -363,6 +365,9 @@ def broadcast_follower(s):
                     deliver(s, to_commit_txns[min(to_commit_txns)])
                     del noncommited_txns[min(noncommited_txns)]
                     del to_commit_txns[min(to_commit_txns)]
+                    if len(noncommited_txns) == 0 or len(to_commit_txns) == 0:
+                        break
+                    
                             
             elif msg['opcode'] == 'ELECTION':
                 sendMessage(s, 'OK', {}, msg['senderid'])

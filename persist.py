@@ -20,6 +20,11 @@ class WriteList(list):
             f.write(value + '\n')
         super(WriteList, self).append(value)
 
+    def purge(self):
+        with open('history%d'%self.peerID, 'w') as f:
+            f.write('')
+        del self[:]
+
 class Peer(object):
     """
     Just set variables in here naturally. Persisting and loading from
