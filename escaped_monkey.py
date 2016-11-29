@@ -371,6 +371,9 @@ def broadcast_follower(s):
                 s.leader = msg['senderid']
                 return 'discovery'
 
+        if not sendMessage.peerStatus[s.leader]:
+            return 'leader_election'
+
 def broadcast(s):
     if s.leader == s.peerID:
         return broadcast_leader(s)
