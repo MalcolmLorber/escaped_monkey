@@ -4,6 +4,18 @@ import socket
 import json
 import sys
 
+# Utility functions
+def dprint(s):
+    if hasattr(dprint, 'number'):
+        sys.stderr.write("%02d: %s"%(dprint.number, s) + '\n')
+    else:
+        sys.stderr.write(str(s)+'\n')
+
+# Helper functions
+def getport(peerID):
+    return DEFAULTPORT + peerID
+
+
 def sendMsgA(addr, msg, peerID):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
