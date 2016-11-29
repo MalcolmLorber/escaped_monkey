@@ -345,18 +345,21 @@ def broadcast_leader(s):
                     
 def broadcast_follower(s):
     noncommited_txns = {}
+    to_commit_txns = {}
     while True:
         sendMessage(s, 'HEARTBEAT', {}, s.leader)
         for msg in timeloop(s.sock, TIMEOUT_HEARTBEAT_FOLLOWER):
             if msg['opcode'] == 'PROPOSE':
                 s.history.append(msg['event'])
-                noncommited_txns[msg['event']] = json.loads(msg['event'][1])
+                noncommited_txns[json.loads(msg['event'][1][1])] = json.loads(msg['event'][1][0])
                 sendMessage(s, 'ACKEVENT', {'event': msg['event']}, s.leader)
 
             if msg['opcode'] == 'COMMITTX':
-                for e in noncommited_txns:
-                    if noncommited_txns[e]
-                deliver(s, msg['event'])
+                to_commit_txns[json.loads(msg['event'][1][1])]=json.loads(msg['event'][1][0])
+                while min(noncommitted_txns) == min(to_commit_txns):
+                    deliver(s, to_commit_txns[min(to_commit_txns)])
+                    del noncommited_txns[min(noncommited_txns)]
+                    del to_commit_txns[min(to_commit_txns)]
                             
             if msg['opcode'] == 'ELECTION':
                 sendMessage(s, 'OK', {}, msg['senderid'])
