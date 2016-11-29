@@ -184,6 +184,7 @@ def discovery_leader(s):
     s.eprime = max(epochnumbers) + 1
     for i in s.quorum:
         sendMessage(s, 'NEWEPOCH', {'eprime': s.eprime}, i)
+        s.acceptedEpoch = s.eprime
 
     peersleft = len(s.quorum)
     for msg in timeloop(s.sock, TIMEOUT_DISCOVERY_ACKEPOCH):
@@ -231,6 +232,8 @@ def synchronization_leader(s):
     for i in s.quorum:
         sendMessage(s, 'NEWLEADER', {'eprime': s.eprime,
                                      'history': s.history}, i)
+        s.currentEpoch = s.eprime
+        
     peersleft = len(s.quorum)
     for msg in timeloop(s.sock, TIMEOUT_SYNCHRO_ACKNEWLEADER):
         if msg['opcode'] == 'ACKNEWLEADER':
@@ -244,6 +247,10 @@ def synchronization_leader(s):
 
     for i in s.peers:
         sendMessage(s, 'COMMIT', {}, i)
+        s.history.purge()
+        for item in s.history:
+            deliver(s, json.decode(item)[1][0])
+            
         
     return 'broadcast'
 
@@ -260,6 +267,8 @@ def synchronization_follower(s):
                     # purge history
                     s.history.purge()
                     for proposal in msg['history']:
+                        if proposal == '':
+                            continue
                         dprint("Proposal: %s"% str(proposal))
                         #TODO: sort before adding to history
                         s.history.append(json.dumps((s.currentEpoch, json.loads(proposal)[1])))
