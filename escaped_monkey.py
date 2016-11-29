@@ -248,6 +248,7 @@ def synchronization_follower(s):
                         noncommited_txns.append(proposal)
                     sendMessage(s, 'ACKNEWLEADER', {'eprime': msg['eprime'],
                                                     'history': msg['history']}, s.leader)
+                    break
                 else:
                     return 'leader_election'
 
