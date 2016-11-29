@@ -248,7 +248,8 @@ def synchronization_leader(s):
     return 'broadcast'
 
 def synchronization_follower(s):
-    noncommited_txns = []
+    noncommited_txns = {}
+    to_commit_txns = {}
     recvdLeader = False
     for msg in timeloop(s.sock, TIMEOUT_SYNCHRO_NEWLEADER):
         if msg['opcode'] == 'NEWLEADER':
@@ -257,7 +258,9 @@ def synchronization_follower(s):
                     recvdLeader = True
                     s.currentEpoch = msg['eprime']
                     for proposal in msg['history']:
+                        #TODO: sort before adding to history
                         s.history.append((s.currentEpoch, proposal))
+                        #TODO: make dict?
                         noncommited_txns.append(proposal)
                         
                     sendMessage(s, 'ACKNEWLEADER', {'eprime': msg['eprime'],
@@ -303,9 +306,9 @@ def broadcast_leader(s):
             
             if msg['opcode'] == 'EVENT':
                 counter += 1
-                event = (s.eprime, (msg['event'],  (s.eprime, counter)))
+                event = json.dumps((s.eprime, (msg['event'],  (s.eprime, counter))))
                 for i in s.quorum:
-                    sendMessage(s, 'PROPOSE', {'event': json.dumps(event)}, i)
+                    sendMessage(s, 'PROPOSE', {'event': event}, i)
                 ackcounts[event] = 1
                 s.history.append(event)
                 
@@ -367,25 +370,13 @@ def broadcast_follower(s):
             elif msg['opcode'] == 'COORDINATOR':
                 s.leader = msg['senderid']
                 return 'discovery'
-    
-            
-    return "leader_election"
 
 def broadcast(s):
-    while True:
-        con, address = s.sock.accept()
-        msg = json.loads(con.recv(2**16))
-        dprint("Recieved message: %s"%str(msg))
-
-        if msg['opcode'] == 'ELECTION':
-            sendMessage(s, 'OK', {}, msg['senderid'])
-            return "leader_election"
-        elif msg['opcode'] == 'COORDINATOR':
-            s.leader = msg['senderid']
-            return 'discovery'
-    
-    return "leader_election"
-
+    if s.leader == s.peerID:
+        return broadcast_leader(s)
+    else:
+        return broadcast_follower(s)
+        
 # Janky finite state machine. Could probably just return functions
 
 states = {"leader_election": leaderElection,
