@@ -359,7 +359,7 @@ def broadcast_follower(s):
 
             elif msg['opcode'] == 'COMMITTX':
                 to_commit_txns[tuple(json.loads(msg['event'])[1][1])]=json.loads(msg['event'])[1][0]
-                while min(noncommitted_txns) == min(to_commit_txns):
+                while min(noncommited_txns) == min(to_commit_txns):
                     deliver(s, to_commit_txns[min(to_commit_txns)])
                     del noncommited_txns[min(noncommited_txns)]
                     del to_commit_txns[min(to_commit_txns)]
