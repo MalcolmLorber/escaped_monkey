@@ -246,8 +246,8 @@ def synchronization_follower(s):
                     for proposal in msg['history']:
                         s.proposals.append((s.currentEpoch, proposal))
                         noncommited_txns.append(proposal)
-                    sendMessage(s, 'ACKNEWLEADER', {'eprime', msg['eprime'],
-                                                    'history', msg['history']}, s.leader)
+                    sendMessage(s, 'ACKNEWLEADER', {'eprime': msg['eprime'],
+                                                    'history': msg['history']}, s.leader)
                 else:
                     return 'leader_election'
 
