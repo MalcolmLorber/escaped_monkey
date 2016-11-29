@@ -4,6 +4,13 @@ import socket
 import json
 import sys
 
+# Constants
+DEFAULTPORT = 60000
+if os.path.isfile("port"):
+    with open("port", 'r') as f:
+        DEFAULTPORT = int(f.read().strip())
+
+
 # Utility functions
 def dprint(s):
     if hasattr(dprint, 'number'):
