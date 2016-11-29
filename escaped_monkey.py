@@ -111,7 +111,7 @@ def leaderElection(s):
 def discovery_follower(s):
     sendMessage(s, 'FOLLOWERINFO', {'acceptedEpoch': s.acceptedEpoch}, s.leader)
     for msg in timeloop(s.sock, 3.0):
-        if msg['opcode'] == NEWEPOCH and msg['senderid'] == s.leader:
+        if msg['opcode'] == 'NEWEPOCH' and msg['senderid'] == s.leader:
             if msg['eprime'] > s.acceptedEpoch:
                 s.acceptedEpoch = msg['eprime']
                 sendMessage(s, 'ACKEPOCH', {'currentEpoch': s.currentEpoch,
@@ -136,7 +136,7 @@ def discovery_leader(s):
     for msg in timeloop(s.sock, 2.0):
         if msg['opcode'] == 'FOLLOWERINFO':
             epochnumbers.append(msg['acceptedEpoch'])
-            quorum.[msg['senderid']] = ''
+            quorum[msg['senderid']] = ''
             peersleft -= 1
             if peersleft == 0:
                 break
