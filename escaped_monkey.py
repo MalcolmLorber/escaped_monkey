@@ -36,6 +36,7 @@ def sendMessage(s, opcode, message, peernum):
     if not hasattr(sendMessage, 'peers'):
         sendMessage.peers = {}
         sendMessage.threads = []
+        sendMessage.peerStatus = {}
         with open('peers.txt') as f:
             for i, ip in enumerate(filter(lambda x: x != '', f.read().split('\n'))):
                 sendMessage.peerStatus[i] = True
