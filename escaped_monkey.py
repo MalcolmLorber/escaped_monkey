@@ -202,7 +202,7 @@ def discovery_leader(s):
     highestEpoch = max([q[i]['currentEpoch'] for i in q])
     hEg = filter(lambda x: q[x]['currentEpoch'] == highestEpoch, q)
     highestZxid = max([q[i]['lastZxid'] for i in hEg])
-    hZg = filter(lambda x: q[x]['lastZxid'] == highestEpoch, hEg)
+    hZg = filter(lambda x: q[x]['lastZxid'] == highestZxid, hEg)
     f = hZg[0]
     dprint("f has been chosen as %d"%f)
     return 'synchronization'
