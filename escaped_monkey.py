@@ -141,7 +141,7 @@ def discovery_follower(s):
 
 def discovery_leader(s):
     peersleft = len(s.peers) - 1
-    epochnumbers = []
+    epochnumbers = [s.currentEpoch]
     s.quorum = {}
     contacts = 1
     for msg in timeloop(s.sock, 2.0):
@@ -183,7 +183,7 @@ def discovery_leader(s):
 
     
     # TODO: choose f
-    q = s.quorum + {self.peerID: {'currentEpoch': s.currentEpoch,
+    q = s.quorum + {s.peerID: {'currentEpoch': s.currentEpoch,
                                   'lastZxid': s.lastZxid,
                                   'history': s.history[:]}}
     highestEpoch = max([q[i]['currentEpoch'] for i in q])
