@@ -217,6 +217,13 @@ def discovery_leader(s):
     hZg = filter(lambda x: q[x]['lastZxid'] == highestZxid, hEg)
     f = hZg[0]
     dprint("f has been chosen as %d"%f)
+    s.history.purge()
+    for e in q[f]['history']:
+        if e == '':
+            continue
+        s.history.append(e)
+        
+        
     return 'synchronization'
 
         
@@ -246,7 +253,6 @@ def synchronization_leader(s):
 
     for i in s.peers:
         sendMessage(s, 'COMMIT', {}, i)
-        s.history.purge()
         for item in s.history:
             if item == '':
                 continue
