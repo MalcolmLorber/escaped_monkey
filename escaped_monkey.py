@@ -238,8 +238,8 @@ def synchronization_leader(s):
             if peersleft == 0:
                 break
 
-    if len(s.quorum)-peersleft <= len(s.peers)/2.0:
-        dprint("Synchronization leader failed to achive a quorum")
+    if len(s.quorum)-peersleft+1 <= len(s.peers)/2.0:
+        dprint("Synchronization leader failed to achive a quorum, got %d / %d", (len(s.quorum)-peersleft, len(s.peers)))
         return 'leader_election'
 
     for i in s.peers:
