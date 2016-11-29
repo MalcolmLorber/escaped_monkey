@@ -144,7 +144,7 @@ def discovery_leader(s):
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
 
-    if peersleft >= (len(s.peers)-1)/2.0:
+    if peersleft >= len(s.peers)/2.0:
         print("Failed to achive quorum")
         return 'leader_election'
 
