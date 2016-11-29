@@ -55,7 +55,7 @@ def sendMessage(s, opcode, message, peernum):
         sendMessage.peerStatus = {}
         with open('peers.txt') as f:
             for i, ip in enumerate(filter(lambda x: x != '', f.read().split('\n'))):
-                sendMessage.peerStatus[i] = True
+                sendMessage.peerStatus[i+1] = True
                 sendMessage.peers[i+1] = (ip.strip(), getport(i+1))
     
     message['senderid'] = s.peerID
