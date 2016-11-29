@@ -119,6 +119,9 @@ def deliver(s, message):
             filesystem[m['filename']] += m['line']
             filesystem[m['filename']] += '\n'
             return_string = "Done."
+
+    else:
+        return_string = "Command not recognized"
     
         
     if m['id'] in s.clients:
