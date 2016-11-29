@@ -76,9 +76,9 @@ def timeloop(socket, t):
         for sock in ir:
             con, addr = sock.accept()
             msg = json.loads(con.recv(2**16))
-            msg['con'] = con
             if msg['opcode'] != 'HEARTBEAT':
                 dprint("Recieved message: %s"%str(msg))
+            msg['con'] = con
             yield msg
 
 
