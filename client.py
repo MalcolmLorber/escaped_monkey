@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 import socket
 import json
@@ -35,7 +35,7 @@ def sendMsgA(addr, msg, peerID):
         s.close()
     except:
         dprint("could not send message to %s"%str(addr))
-        
+
 def sendMessage(opcode, message, peernum):
     """Sends a message without blocking. May throw error on timeout"""
     if not hasattr(sendMessage, 'peers'):
@@ -44,15 +44,15 @@ def sendMessage(opcode, message, peernum):
         with open('peers.txt') as f:
             for i, ip in enumerate(filter(lambda x: x != '', f.read().split('\n'))):
                 sendMessage.peers[i+1] = (ip.strip(), getport(i+1))
-    
+
     message['senderid'] = 0
     message['opcode'] = opcode
 
-    dprint("Sending message: %s to %s"% (str(message), str(peernum)))
+    #dprint("Sending message: %s to %s"% (str(message), str(peernum)))
     t = threading.Thread(target=sendMsgA, args=(sendMessage.peers[peernum], json.dumps(message), peernum))
     t.start()
     sendMessage.threads.append(t)
-        
+
 destPeerID = int(sys.argv[1])
 
 while True:
@@ -61,12 +61,19 @@ while True:
         break
     parts = s.split(' ')
     if len(parts) < 2:
-        print("Invalid command")
+        print("Invalid command - not enough arguments")
+        continue
     command = {}
     command['opcode'] = parts[0]
     command['filename'] = parts[1]
     command['id'] = time.time()
+
+    if not command['opcode'] in ['create', 'delete', 'append', 'read']:
+        print("Invalid command - invalid operation")
+        continue
+
     if parts[0] == 'append':
         command['line'] = ' '.join(parts[2:])
-        
+
     sendMessage('EVENT', {'event': json.dumps(command)}, destPeerID)
+    time.sleep(.3)

@@ -35,7 +35,7 @@ def dprint(s):
     else:
         sys.stderr.write(str(s)+'\n')
 
-         
+
 def sendMsgA(addr, msg, peerID):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -47,7 +47,7 @@ def sendMsgA(addr, msg, peerID):
         sendMessage.peerStatus[peerID] = False
         if json.loads(msg)['opcode'] != 'HEARTBEAT':
             dprint("could not send message to %s"%str(addr))
-        
+
 def sendMessage(s, opcode, message, peernum):
     """Sends a message without blocking. May throw error on timeout"""
     if not hasattr(sendMessage, 'peers'):
@@ -58,7 +58,7 @@ def sendMessage(s, opcode, message, peernum):
             for i, ip in enumerate(filter(lambda x: x != '', f.read().split('\n'))):
                 sendMessage.peerStatus[i+1] = True
                 sendMessage.peers[i+1] = (ip.strip(), getport(i+1))
-    
+
     message['senderid'] = s.peerID
     message['opcode'] = opcode
     if message['opcode'] != 'HEARTBEAT':
@@ -98,7 +98,7 @@ def deliver(s, message):
         else:
             filesystem[m['filename']] = ''
             return_string = "Done"
-            
+
     elif m['opcode'] == 'delete':
         if not m['filename'] in filesystem:
             return_string = "File %s does not exist"%m['filename']
@@ -122,17 +122,20 @@ def deliver(s, message):
 
     else:
         return_string = "Command not recognized"
-            
+
     if m['id'] in s.clients:
-        s.clients[m['id']].send(return_string)
-        s.clients[m['id']].close()
+        try:
+            s.clients[m['id']].send(return_string)
+            s.clients[m['id']].close()
+        except:
+            dprint("Could not reply to client. Is socket dead?")
         del s.clients[m['id']]
-    
+
 
 # FSM States
 def leaderElection(s):
     s.leader = None
-        
+
     for peerid in s.peers:
         if peerid > s.peerID:
             sendMessage(s, 'ELECTION', {}, peerid)
@@ -150,10 +153,10 @@ def leaderElection(s):
                 sendMessage(s, 'OK', {}, msg['senderid'])
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
-            return "discovery"  
+            return "discovery"
         else:
             dprint("extranious message")
-                    
+
     if peersleft == len(filter(lambda x: x > s.peerID, s.peers)):
         dprint("I AM LEADER. MWAHAHAHAHAHA")
         s.leader = s.peerID
@@ -162,7 +165,7 @@ def leaderElection(s):
         return "discovery"
 
     dprint("waiting for message from our great leader")
-    
+
     for msg in timeloop(s.sock, TIMEOUT_BULLY_COORDINATOR):
         if msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
@@ -172,10 +175,10 @@ def leaderElection(s):
                 sendMessage(s, 'OK', {}, msg['senderid'])
         else:
             dprint("extranious message")
-            
+
     return "leader_election"
 
-    
+
 def discovery_follower(s):
     sendMessage(s, 'FOLLOWERINFO', {'acceptedEpoch': s.acceptedEpoch}, s.leader)
     for msg in timeloop(s.sock, TIMEOUT_DISCOVERY_NEWEPOCH):
@@ -194,7 +197,7 @@ def discovery_follower(s):
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
             return "discovery"
-    
+
     return 'leader_election'
 
 def discovery_leader(s):
@@ -210,7 +213,7 @@ def discovery_leader(s):
             contacts += 1
             if peersleft == 0:
                 break
-            
+
         elif msg['opcode'] == 'ELECTION':
             sendMessage(s, 'OK', {}, msg['senderid'])
             return "leader_election"
@@ -264,10 +267,10 @@ def discovery_leader(s):
         if e == '':
             continue
         s.history.append(json.dumps((s.eprime, json.loads(e)[1])))
-        
+
     return 'synchronization'
 
-        
+
 def discovery(s):
     global filesystem
     filesystem = {}
@@ -281,7 +284,7 @@ def synchronization_leader(s):
         sendMessage(s, 'NEWLEADER', {'eprime': s.eprime,
                                      'history': s.history}, i)
         s.currentEpoch = s.eprime
-        
+
     peersleft = len(s.quorum)
     for msg in timeloop(s.sock, TIMEOUT_SYNCHRO_ACKNEWLEADER):
         if msg['opcode'] == 'ACKNEWLEADER':
@@ -296,13 +299,13 @@ def synchronization_leader(s):
     for i in s.peers:
         sendMessage(s, 'COMMIT', {}, i)
 
-    #TODO: WRONG EPOCH ON LEADER HISTORY    
+    #TODO: WRONG EPOCH ON LEADER HISTORY
     for item in s.history:
         if item == '':
             continue
         deliver(s, json.loads(item)[1][0])
-            
-        
+
+
     return 'broadcast'
 
 def synchronization_follower(s):
@@ -325,7 +328,7 @@ def synchronization_follower(s):
                         s.history.append(json.dumps((s.currentEpoch, json.loads(proposal)[1])))
                         #TODO: make dict?
                         noncommited_txns[tuple(json.loads(proposal)[1][1])] = json.loads(proposal)[1][0]
-                        
+
                     sendMessage(s, 'ACKNEWLEADER', {'eprime': msg['eprime'],
                                                     'history': msg['history']}, s.leader)
                     break
@@ -334,10 +337,10 @@ def synchronization_follower(s):
 
         else:
             dprint("Extranious message during follower synchronization")
-                
+
     if not recvdLeader:
         return 'leader_election'
-    
+
     for msg in timeloop(s.sock, TIMEOUT_SYNCHRO_COMMIT):
         if msg['opcode'] == 'COMMIT':
             if msg['senderid'] == s.leader:
@@ -348,10 +351,10 @@ def synchronization_follower(s):
 
         else:
             dprint("Extranious message during follower synchronazation commit wait")
-                                
+
     return 'leader_election'
 
-    
+
 def synchronization(s):
     if s.peerID == s.leader:
         return synchronization_leader(s)
@@ -364,9 +367,9 @@ def broadcast_leader(s):
     while True:
         for i in s.peers:
             sendMessage(s, 'HEARTBEAT', {}, i)
-            
+
         for msg in timeloop(s.sock, TIMEOUT_HEARTBEAT_LEADER):
-            
+
             if msg['opcode'] == 'EVENT':
                 if msg['senderid'] == 0:
                     s.clients[json.loads(msg['event'])['id']] = msg['con']
@@ -376,13 +379,13 @@ def broadcast_leader(s):
                     sendMessage(s, 'PROPOSE', {'event': event}, i)
                 ackcounts[event] = 1
                 s.history.append(event)
-                
+
             elif msg['opcode'] == 'ACKEVENT':
                 if not msg['event'] in ackcounts:
                     continue
-                
+
                 ackcounts[msg['event']] += 1
-                
+
                 if ackcounts[msg['event']] > len(s.peers) / 2.0:
                     for i in s.peers:
                         if i == s.peerID:
@@ -390,7 +393,7 @@ def broadcast_leader(s):
                         sendMessage(s, 'COMMITTX', {'event': msg['event']}, i)
                         deliver(s, json.loads(msg['event'])[1][0])
                     del ackcounts[msg['event']]
-                        
+
             elif msg['opcode'] == 'FOLLOWERINFO':
                 sendMessage(s, 'NEWEPOCH', {'eprime': s.eprime}, msg['senderid'])
                 sendMessage(s, 'NEWLEADER', {'eprime': s.eprime, 'history': s.history}, msg['senderid'])
@@ -403,15 +406,15 @@ def broadcast_leader(s):
             elif msg['opcode'] == 'ELECTION':
                 sendMessage(s, 'OK', {}, msg['senderid'])
                 return "leader_election"
-            
+
             elif msg['opcode'] == 'COORDINATOR':
                 s.leader = msg['senderid']
                 return 'discovery'
-                                    
+
         connectedPeers = filter(lambda x: sendMessage.peerStatus[x], sendMessage.peerStatus)
         if len(connectedPeers) <= len(s.peers)/2.0:
             return "leader_election"
-                    
+
 def broadcast_follower(s):
     noncommited_txns = {}
     to_commit_txns = {}
@@ -433,15 +436,15 @@ def broadcast_follower(s):
                     del to_commit_txns[min(to_commit_txns)]
                     if len(noncommited_txns) == 0 or len(to_commit_txns) == 0:
                         break
-                    
-                            
+
+
             elif msg['opcode'] == 'ELECTION':
                 sendMessage(s, 'OK', {}, msg['senderid'])
                 return "leader_election"
             elif msg['opcode'] == 'COORDINATOR':
                 s.leader = msg['senderid']
                 return 'discovery'
-            
+
             elif msg['opcode'] == 'EVENT':
                 if msg['senderid'] == 0:
                     s.clients[json.loads(msg['event'])['id']] = msg['con']
@@ -455,7 +458,7 @@ def broadcast(s):
         return broadcast_leader(s)
     else:
         return broadcast_follower(s)
-        
+
 # Janky finite state machine. Could probably just return functions
 
 states = {"leader_election": leaderElection,
@@ -469,7 +472,7 @@ def main():
 
     peerID = int(sys.argv[1])
     dprint.number = peerID
-    
+
     s = persist.Peer(peerID)
 
     # Initilize the list of peers
@@ -478,11 +481,11 @@ def main():
     with open('peers.txt') as f:
         for i, ip in enumerate(filter(lambda x: x != '', f.read().split('\n'))):
             s.peers[i+1] = (ip.strip(), getport(i+1))
-            
+
     s.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.sock.bind(('0.0.0.0', getport(peerID)))
     s.sock.listen(20)
-        
+
     state = "leader_election"
     while True:
         dprint("Going to state: %s"%state)
