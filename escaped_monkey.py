@@ -326,6 +326,7 @@ def broadcast_leader(s):
                             continue
                         sendMessage(s, 'COMMITTX', {'event': msg['event']}, i)
                         deliver(s, msg['event'])
+                    del ackcounts[msg['event']]
                         
             elif msg['opcode'] == 'FOLLOWERINFO':
                 sendMessage(s, 'NEWEPOCH', {'eprime': s.eprime}, msg['senderid'])
@@ -361,6 +362,8 @@ def broadcast_follower(s):
 
             elif msg['opcode'] == 'COMMITTX':
                 to_commit_txns[tuple(json.loads(msg['event'])[1][1])]=json.loads(msg['event'])[1][0]
+                if len(noncommited_txns) == 0:
+                    continue
                 while min(noncommited_txns) == min(to_commit_txns):
                     deliver(s, to_commit_txns[min(to_commit_txns)])
                     del noncommited_txns[min(noncommited_txns)]
