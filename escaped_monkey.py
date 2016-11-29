@@ -16,6 +16,17 @@ if os.path.isfile("port"):
     with open("port", 'r') as f:
         DEFAULTPORT = int(f.read().strip())
 
+TIMEOUT_BULLY_OK = 2.0
+TIMEOUT_BULLY_COORDINATOR = 2.0
+TIMEOUT_DISCOVERY_NEWEPOCH = 3.0
+TIMEOUT_DISCOVERY_FOLLOWERINFO = 2.0
+TIMEOUT_DISCOVERY_ACKEPOCH = 2.0
+TIMEOUT_SYNCHRO_ACKNEWLEADER = 2.0
+TIMEOUT_SYNCHRO_NEWLEADER = 5.0
+TIMEOUT_SYNCHRO_COMMIT = 4.0
+
+TIMEOUT_HEARTBEAT_LEADER = 4.0
+
 # Utility functions
 def dprint(s):
     if hasattr(dprint, 'number'):
@@ -85,7 +96,7 @@ def leaderElection(s):
 
     peersleft = len(filter(lambda x: x > s.peerID, s.peers))
     #if peersleft != 0:
-    for msg in timeloop(s.sock, 2.0):
+    for msg in timeloop(s.sock, TIMEOUT_BULLY_OK):
         if msg['opcode'] == 'OK':
             peersleft -= 1
             if peersleft == 0:
@@ -109,7 +120,7 @@ def leaderElection(s):
 
     dprint("waiting for message from our great leader")
     
-    for msg in timeloop(s.sock, 2.0):
+    for msg in timeloop(s.sock, TIMEOUT_BULLY_COORDINATOR):
         if msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
             return "discovery"
@@ -124,7 +135,7 @@ def leaderElection(s):
     
 def discovery_follower(s):
     sendMessage(s, 'FOLLOWERINFO', {'acceptedEpoch': s.acceptedEpoch}, s.leader)
-    for msg in timeloop(s.sock, 3.0):
+    for msg in timeloop(s.sock, TIMEOUT_DISCOVERY_NEWEPOCH):
         if msg['opcode'] == 'NEWEPOCH' and msg['senderid'] == s.leader:
             if msg['eprime'] > s.acceptedEpoch:
                 s.acceptedEpoch = msg['eprime']
@@ -148,7 +159,7 @@ def discovery_leader(s):
     epochnumbers = [s.currentEpoch]
     s.quorum = {}
     contacts = 1
-    for msg in timeloop(s.sock, 2.0):
+    for msg in timeloop(s.sock, TIMEOUT_DISCOVERY_FOLLOWERINFO):
         if msg['opcode'] == 'FOLLOWERINFO':
             epochnumbers.append(msg['acceptedEpoch'])
             s.quorum[msg['senderid']] = {}
@@ -174,7 +185,7 @@ def discovery_leader(s):
         sendMessage(s, 'NEWEPOCH', {'eprime': s.eprime}, i)
 
     peersleft = len(s.quorum)
-    for msg in timeloop(s.sock, 2.0):
+    for msg in timeloop(s.sock, TIMEOUT_DISCOVERY_ACKEPOC):
         if msg['opcode'] == 'ACKEPOCH':
             if msg['senderid'] in s.quorum:
                 s.quorum[msg['senderid']]['currentEpoch'] = msg['currentEpoch']
@@ -209,6 +220,7 @@ def discovery_leader(s):
 
         
 def discovery(s):
+    # TODO: Wipe filesystem
     if s.peerID == s.leader:
         return discovery_leader(s)
     else:
@@ -219,7 +231,7 @@ def synchronization_leader(s):
         sendMessage(s, 'NEWLEADER', {'eprime': s.eprime,
                                      'history': s.history}, i)
     peersleft = len(s.quorum)
-    for msg in timeloop(s.sock, 2.0):
+    for msg in timeloop(s.sock, TIMEOUT_SYNCHRO_ACKNEWLEADER):
         if msg['opcode'] == 'ACKNEWLEADER':
             peersleft -= 1
             if peersleft == 0:
@@ -237,15 +249,16 @@ def synchronization_leader(s):
 def synchronization_follower(s):
     noncommited_txns = []
     recvdLeader = False
-    for msg in timeloop(s.sock, 5.0):
+    for msg in timeloop(s.sock, TIMEOUT_SYNCHRO_NEWLEADER):
         if msg['opcode'] == 'NEWLEADER':
             if msg['senderid'] == s.leader:
                 if msg['eprime'] == s.acceptedEpoch:
                     recvdLeader = True
                     s.currentEpoch = msg['eprime']
                     for proposal in msg['history']:
-                        s.proposals.append((s.currentEpoch, proposal))
+                        s.history.append((s.currentEpoch, proposal))
                         noncommited_txns.append(proposal)
+                        
                     sendMessage(s, 'ACKNEWLEADER', {'eprime': msg['eprime'],
                                                     'history': msg['history']}, s.leader)
                     break
@@ -258,9 +271,10 @@ def synchronization_follower(s):
     if not recvdLeader:
         return 'leader_election'
     
-    for msg in timeloop(s.sock, 4.0):
+    for msg in timeloop(s.sock, TIMEOUT_SYNCHRO_COMMIT):
         if msg['opcode'] == 'COMMIT':
             if msg['senderid'] == s.leader:
+                #TODO: sort noncommited_txns
                 for tx in noncommited_txns:
                     deliver(s, tx)
                 return 'broadcast'
@@ -277,16 +291,58 @@ def synchronization(s):
     else:
         return synchronization_follower(s)
 
-        
-    
-        if msg['opcode'] == 'ELECTION':
-            sendMessage(s, 'OK', {}, msg['senderid'])
+def broadcast_leader(s):
+    counter = 0
+    ackcounts = {}
+    while True:
+        for i in s.peers:
+            sendMessage(s, 'HEARTBEAT', {}, i)
+            
+        for msg in timeloop(s.sock, TIMEOUT_HEARTBEAT_LEADER):
+            
+            if msg['opcode'] == 'EVENT':
+                counter += 1
+                event = {'eprime': s.eprime, 'v': msg['v'], 'z': (s.eprime, counter)}
+                for i in s.quorum:
+                    sendMessage(s, 'PROPOSE', {'event': json.dumps(event)}, i)
+                ackcounts[event] = 1
+                s.history.append(event)
+                
+            if msg['opcode'] == 'ACK':
+                if not msg['event'] in ackcounts:
+                    continue
+                
+                ackcounts[msg['event']] += 1
+                
+                if ackcounts[msg['event']] > len(s.peers) / 2.0:
+                    for i in s.peers:
+                        if i == s.peerID:
+                            continue
+                        sendMessage(s, 'COMMITTX', {'event': msg['event']}, i)
+                        deliver(s, msg['event'])
+                        
+            if msg['opcode'] == 'FOLLOWERINFO':
+                sendMessage(s, 'NEWEPOCH', {'eprime': s.eprime}, msg['senderid'])
+                sendMessage(s, 'NEWLEADER', {'eprime': s.eprime, 'history': s.history}, msg['senderid'])
+
+            if msg['opcode'] == 'ACKNEWLEADER':
+                sendMessage(s, 'COMMIT', {}, msg['senderid'])
+                if not msg['senderid'] in s.quorum:
+                    s.quorum.append(msg['senderid'])
+
+            if msg['opcode'] == 'ELECTION':
+                sendMessage(s, 'OK', {}, msg['senderid'])
+                return "leader_election"
+            elif msg['opcode'] == 'COORDINATOR':
+                s.leader = msg['senderid']
+                return 'discovery'
+                                    
+        connectedPeers = filter(lambda x: sendMessage.peerStatus[x], sendMessage.peerStatus)
+        if len(connectedPeers) <= len(s.peers)/2.0:
             return "leader_election"
-        elif msg['opcode'] == 'COORDINATOR':
-            s.leader = msg['senderid']
-            return 'discovery'
-    
-    return "broadcast"
+                    
+def broadcast_follower(s):
+    return "leader_election"
 
 def broadcast(s):
     while True:

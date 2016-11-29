@@ -12,7 +12,8 @@ Zookeeper:
 	ACKNEWEPOCH
 	COMMIT
 	ACK
-	DIFF
-	SNAP
-	TRUNK
+	PROPOSE
+	COMMITTX
 	
+Protocol:
+	EVENT
