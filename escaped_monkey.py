@@ -253,10 +253,12 @@ def synchronization_leader(s):
 
     for i in s.peers:
         sendMessage(s, 'COMMIT', {}, i)
-        for item in s.history:
-            if item == '':
-                continue
-            deliver(s, json.loads(item)[1][0])
+
+    #TODO: WRONG EPOCH ON LEADER HISTORY    
+    for item in s.history:
+        if item == '':
+            continue
+        deliver(s, json.loads(item)[1][0])
             
         
     return 'broadcast'
