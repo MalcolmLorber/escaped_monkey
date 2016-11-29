@@ -186,7 +186,7 @@ def discovery_leader(s):
     q = s.quorum.copy()
     q[s.peerID] = {'currentEpoch': s.currentEpoch,
                    'lastZxid': s.lastZxid,
-                   'history': s.history[:]}})
+                   'history': s.history[:]}
     highestEpoch = max([q[i]['currentEpoch'] for i in q])
     hEg = filter(lambda x: q[x]['currentEpoch'] == highestEpoch, q)
     highestZxid = max([q[i]['lastZxid'] for i in q])
