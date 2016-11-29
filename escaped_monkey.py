@@ -94,7 +94,7 @@ def deliver(s, message):
     m = json.loads(message)
     if m['opcode'] == 'create':
         if m['filename'] in filesystem:
-            return_string = "File %s exists"%m['filename']
+            return_string = "File %s already exists"%m['filename']
         else:
             filesystem[m['filename']] = ''
             return_string = "Done"
@@ -122,8 +122,7 @@ def deliver(s, message):
 
     else:
         return_string = "Command not recognized"
-    
-        
+            
     if m['id'] in s.clients:
         s.clients[m['id']].send(return_string)
         s.clients[m['id']].close()
@@ -270,7 +269,7 @@ def discovery_leader(s):
 
         
 def discovery(s):
-    # TODO: Wipe filesystem
+    filesystem = {}
     if s.peerID == s.leader:
         return discovery_leader(s)
     else:
