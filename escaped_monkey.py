@@ -260,6 +260,7 @@ def synchronization_follower(s):
                     # purge history
                     s.history.purge()
                     for proposal in msg['history']:
+                        dprint("Proposal: %s", str(proposal))
                         #TODO: sort before adding to history
                         s.history.append(json.dumps((s.currentEpoch, json.loads(proposal)[1])))
                         #TODO: make dict?
