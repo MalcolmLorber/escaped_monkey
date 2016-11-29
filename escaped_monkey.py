@@ -88,11 +88,12 @@ def getport(peerID):
 
 # Filesystem functions
 def deliver(s, message):
+    dprint("DELIVERING: %s"%str(message))
     m = json.loads(message)
     if m['id'] in s.clients:
         s.clients[m['id']].send("Message %s delivered"%str(message))
         s.clients[m['id']].close()
-    dprint("DELIVERING: %s"%str(message))
+    
 
 # FSM States
 def leaderElection(s):
