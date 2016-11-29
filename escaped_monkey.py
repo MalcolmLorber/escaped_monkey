@@ -221,8 +221,7 @@ def discovery_leader(s):
     for e in q[f]['history']:
         if e == '':
             continue
-        s.history.append(e)
-        
+        s.history.append(json.dumps((s.eprime, json.loads(e)[1])))
         
     return 'synchronization'
 
