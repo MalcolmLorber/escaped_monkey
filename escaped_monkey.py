@@ -204,7 +204,6 @@ def discovery_leader(s):
             s.leader = msg['senderid']
             return 'discovery'
 
-
     if peersleft != 0:
         return 'leader_election'
 
@@ -249,6 +248,8 @@ def synchronization_leader(s):
         sendMessage(s, 'COMMIT', {}, i)
         s.history.purge()
         for item in s.history:
+            if item == '':
+                continue
             deliver(s, json.decode(item)[1][0])
             
         
