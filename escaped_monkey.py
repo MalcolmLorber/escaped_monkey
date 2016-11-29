@@ -259,7 +259,7 @@ def synchronization_follower(s):
                     s.currentEpoch = msg['eprime']
                     for proposal in msg['history']:
                         #TODO: sort before adding to history
-                        s.history.append((s.currentEpoch, proposal))
+                        s.history.append(json.dumps((s.currentEpoch, json.loads(proposal)[1])))
                         #TODO: make dict?
                         noncommited_txns[tuple(json.loads(proposal)[1][1])] = json.loads(proposal)[1][0]
                         
