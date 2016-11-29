@@ -25,8 +25,8 @@ TIMEOUT_SYNCHRO_ACKNEWLEADER = 2.0
 TIMEOUT_SYNCHRO_NEWLEADER = 5.0
 TIMEOUT_SYNCHRO_COMMIT = 4.0
 
-TIMEOUT_HEARTBEAT_LEADER = 4.0
-TIMEOUT_HEARTBEAT_FOLLOWER = 4.0
+TIMEOUT_HEARTBEAT_LEADER = 0.25
+TIMEOUT_HEARTBEAT_FOLLOWER = 0.25
 
 # Utility functions
 def dprint(s):
@@ -45,7 +45,8 @@ def sendMsgA(addr, msg, peerID):
         sendMessage.peerStatus[peerID] = True
     except:
         sendMessage.peerStatus[peerID] = False
-        dprint("could not send message to %s"%str(addr))
+        if json.loads(msg)['opcode'] != 'HEARTBEAT':
+            dprint("could not send message to %s"%str(addr))
         
 def sendMessage(s, opcode, message, peernum):
     """Sends a message without blocking. May throw error on timeout"""
@@ -60,8 +61,8 @@ def sendMessage(s, opcode, message, peernum):
     
     message['senderid'] = s.peerID
     message['opcode'] = opcode
-
-    dprint("Sending message: %s to %s"% (str(message), str(peernum)))
+    if message['opcode'] != 'HEARTBEAT':
+        dprint("Sending message: %s to %s"% (str(message), str(peernum)))
     t = threading.Thread(target=sendMsgA, args=(sendMessage.peers[peernum], json.dumps(message), peernum))
     t.start()
     sendMessage.threads.append(t)
@@ -75,7 +76,8 @@ def timeloop(socket, t):
         for sock in ir:
             con, addr = sock.accept()
             msg = json.loads(con.recv(2**16))
-            dprint("Recieved message: %s"%str(msg))
+            if msg['opcode'] != 'HEARTBEAT':
+                dprint("Recieved message: %s"%str(msg))
             yield msg
 
 
