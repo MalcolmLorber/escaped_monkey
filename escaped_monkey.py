@@ -372,7 +372,7 @@ def broadcast_follower(s):
                 return 'discovery'
             
             elif msg['opcode'] == 'EVENT':
-                sendMessage(s, 'EVENT', {'event': msg['event'], s.leader)
+                sendMessage(s, 'EVENT', {'event': msg['event']}, s.leader)
 
         if not sendMessage.peerStatus[s.leader]:
             return 'leader_election'
