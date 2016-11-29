@@ -26,6 +26,7 @@ TIMEOUT_SYNCHRO_NEWLEADER = 5.0
 TIMEOUT_SYNCHRO_COMMIT = 4.0
 
 TIMEOUT_HEARTBEAT_LEADER = 4.0
+TIMEOUT_HEARTBEAT_FOLLOWER = 4.0
 
 # Utility functions
 def dprint(s):
@@ -185,7 +186,7 @@ def discovery_leader(s):
         sendMessage(s, 'NEWEPOCH', {'eprime': s.eprime}, i)
 
     peersleft = len(s.quorum)
-    for msg in timeloop(s.sock, TIMEOUT_DISCOVERY_ACKEPOC):
+    for msg in timeloop(s.sock, TIMEOUT_DISCOVERY_ACKEPOCH):
         if msg['opcode'] == 'ACKEPOCH':
             if msg['senderid'] in s.quorum:
                 s.quorum[msg['senderid']]['currentEpoch'] = msg['currentEpoch']
@@ -302,13 +303,13 @@ def broadcast_leader(s):
             
             if msg['opcode'] == 'EVENT':
                 counter += 1
-                event = {'eprime': s.eprime, 'v': msg['v'], 'z': (s.eprime, counter)}
+                event = (s.eprime, (msg['event'],  (s.eprime, counter)))
                 for i in s.quorum:
                     sendMessage(s, 'PROPOSE', {'event': json.dumps(event)}, i)
                 ackcounts[event] = 1
                 s.history.append(event)
                 
-            if msg['opcode'] == 'ACK':
+            if msg['opcode'] == 'ACKEVENT':
                 if not msg['event'] in ackcounts:
                     continue
                 
@@ -333,6 +334,7 @@ def broadcast_leader(s):
             if msg['opcode'] == 'ELECTION':
                 sendMessage(s, 'OK', {}, msg['senderid'])
                 return "leader_election"
+            
             elif msg['opcode'] == 'COORDINATOR':
                 s.leader = msg['senderid']
                 return 'discovery'
@@ -342,6 +344,28 @@ def broadcast_leader(s):
             return "leader_election"
                     
 def broadcast_follower(s):
+    noncommited_txns = {}
+    while True:
+        sendMessage(s, 'HEARTBEAT', {}, s.leader)
+        for msg in timeloop(s.sock, TIMEOUT_HEARTBEAT_FOLLOWER):
+            if msg['opcode'] == 'PROPOSE':
+                s.history.append(msg['event'])
+                noncommited_txns[msg['event']] = json.loads(msg['event'][1])
+                sendMessage(s, 'ACKEVENT', {'event': msg['event']}, s.leader)
+
+            if msg['opcode'] == 'COMMITTX':
+                for e in noncommited_txns:
+                    if noncommited_txns[e]
+                deliver(s, msg['event'])
+                            
+            if msg['opcode'] == 'ELECTION':
+                sendMessage(s, 'OK', {}, msg['senderid'])
+                return "leader_election"
+            elif msg['opcode'] == 'COORDINATOR':
+                s.leader = msg['senderid']
+                return 'discovery'
+    
+            
     return "leader_election"
 
 def broadcast(s):

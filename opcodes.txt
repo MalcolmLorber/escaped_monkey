@@ -3,6 +3,7 @@ Opcodes:
 bully opcodes:
       	 ELECTION
 	 COORDINATOR
+	 ACK
 	 OK
 
 Zookeeper:
@@ -11,7 +12,7 @@ Zookeeper:
 	ACKEPOCH
 	ACKNEWEPOCH
 	COMMIT
-	ACK
+	ACKEVENT
 	PROPOSE
 	COMMITTX
 	
