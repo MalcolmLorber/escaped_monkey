@@ -34,7 +34,7 @@ def sendMsgA(addr, msg, peerID):
         print(s.recv(1024))
         s.close()
     except:
-        dprint("could not send message to %s"%str(addr))
+        dprint("could not send message to %s"%peerID)
 
 def sendMessage(opcode, message, peernum):
     """Sends a message without blocking. May throw error on timeout"""
