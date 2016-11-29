@@ -146,7 +146,7 @@ def discovery_leader(s):
 
     if peersleft >= (len(s.peers)-1)/2.0:
         print("Failed to achive quorum")
-        return 'leader election'
+        return 'leader_election'
 
     eprime = max(epochnumbers) + 1
     for i in quorum:
