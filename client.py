@@ -68,4 +68,4 @@ while True:
     if parts[0] == 'append':
         command['line'] = ' '.join(parts[2:])
         
-    sendMessage('EVENT', {'event': s}, destPeerID)
+    sendMessage('EVENT', {'event': json.dumps(command)}, destPeerID)
