@@ -6,11 +6,15 @@ import select
 import threading
 import json
 import time
+import os
 
 import persist
 
 # Constants
 DEFAULTPORT = 60000
+if os.path.isfile("port"):
+    with open("port", 'r') as f:
+        DEFAULTPORT = int(f.read().strip())
 
 # Utility functions
 def dprint(s):
@@ -178,6 +182,11 @@ def discovery_leader(s):
         return 'leader_election'
 
     # TODO: choose f
+    highestEpoch = max([quorum[i]['currentEpoch'] for i in quorum])
+    hEg = filter(lambda x: quorum[x]['currentEpoch'] == highestEpoch, quorum)
+    highestZxid = max([quorum[i]['lastZxid'] for i in quorum])
+    hZg = filter(lambda x: quorum[x]['lastZxid'] == highestEpoch, quorum)
+    f = hZg[0]
     return 'synchronization'
 
         
