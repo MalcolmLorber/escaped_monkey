@@ -123,6 +123,7 @@ def discovery_follower(s):
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
+            return "discovery"
     
     return 'leader_election'
 
@@ -143,9 +144,10 @@ def discovery_leader(s):
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
+            return 'discovery'
 
     if peersleft >= len(s.peers)/2.0:
-        print("Failed to achive quorum")
+        print("Failed to achive quorum. Peersleft: %d"%(peersleft))
         return 'leader_election'
 
     eprime = max(epochnumbers) + 1
@@ -193,6 +195,7 @@ def synchronization(s):
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
+            return 'discovery'
     
     return "broadcast"
 
@@ -207,6 +210,7 @@ def broadcast(s):
             return "leader_election"
         elif msg['opcode'] == 'COORDINATOR':
             s.leader = msg['senderid']
+            return 'discovery'
     
     return "leader_election"
 
