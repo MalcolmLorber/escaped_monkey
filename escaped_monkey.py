@@ -85,7 +85,7 @@ def getport(peerID):
 
 # Filesystem functions
 def deliver(s, message):
-    dprint("DELIVERING: %s"%message)
+    dprint("DELIVERING: %s"%str(message))
 
 # FSM States
 def leaderElection(s):
@@ -260,7 +260,7 @@ def synchronization_follower(s):
                     # purge history
                     s.history.purge()
                     for proposal in msg['history']:
-                        dprint("Proposal: %s", str(proposal))
+                        dprint("Proposal: %s"% str(proposal))
                         #TODO: sort before adding to history
                         s.history.append(json.dumps((s.currentEpoch, json.loads(proposal)[1])))
                         #TODO: make dict?
@@ -283,7 +283,7 @@ def synchronization_follower(s):
             if msg['senderid'] == s.leader:
                 #TODO: sort noncommited_txns
                 for tx in sorted(noncommited_txns.items()):
-                    deliver(s, tx)
+                    deliver(s, tx[1])
                 return 'broadcast'
 
         else:
