@@ -20,13 +20,15 @@ def dprint(s):
         sys.stderr.write(str(s)+'\n')
 
          
-def sendMsgA(addr, msg):
+def sendMsgA(addr, msg, peerID):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(addr)
         s.send(msg)
         s.close()
+        sendMessage.peerStatus[peerID] = True
     except:
+        sendMessage.peerStatus[peerID] = False
         dprint("could not send message to %s"%str(addr))
         
 def sendMessage(s, opcode, message, peernum):
@@ -36,9 +38,9 @@ def sendMessage(s, opcode, message, peernum):
         sendMessage.threads = []
         with open('peers.txt') as f:
             for i, ip in enumerate(filter(lambda x: x != '', f.read().split('\n'))):
+                sendMessage.peerStatus[i] = True
                 sendMessage.peers[i+1] = (ip.strip(), getport(i+1))
-        
-    # TODO: spawn new thread for this. Send tcp message to localhost on error?
+    
     message['senderid'] = s.peerID
     message['opcode'] = opcode
 
@@ -151,7 +153,8 @@ def discovery_leader(s):
             s.leader = msg['senderid']
             return 'discovery'
 
-    if peersleft >= len(s.peers)/2.0:
+    connectedPeers = filter(lamba x: sendMessage.peerStatus[x], sendMessage.peerStatus)
+    if peersleft >= len(connectedPeers)/2.0:
         dprint("Failed to achive quorum. Peersleft: %d"%(peersleft))
         return 'leader_election'
 
