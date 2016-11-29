@@ -30,10 +30,9 @@ def sendMsgA(addr, msg, peerID):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(addr)
         s.send(msg)
+        print(s.recv(1024))
         s.close()
-        sendMessage.peerStatus[peerID] = True
     except:
-        sendMessage.peerStatus[peerID] = False
         dprint("could not send message to %s"%str(addr))
         
 def sendMessage(opcode, message, peernum):
@@ -41,24 +40,31 @@ def sendMessage(opcode, message, peernum):
     if not hasattr(sendMessage, 'peers'):
         sendMessage.peers = {}
         sendMessage.threads = []
-        sendMessage.peerStatus = {}
         with open('peers.txt') as f:
             for i, ip in enumerate(filter(lambda x: x != '', f.read().split('\n'))):
-                sendMessage.peerStatus[i+1] = True
                 sendMessage.peers[i+1] = (ip.strip(), getport(i+1))
     
     message['senderid'] = 0
     message['opcode'] = opcode
 
     dprint("Sending message: %s to %s"% (str(message), str(peernum)))
-    t = threading.Thread(target=sendMsgA, args=(sendMessage.peers[peernum], json.dumps(message), peernum))
+    t = threading.Thread(target=sendMsgA, args=(sendMessage.peers[peernum], json.dumps(message), peerID))
     t.start()
     sendMessage.threads.append(t)
-
+        
 destPeerID = int(sys.argv[1])
 
 while True:
-    s = raw_input("> ")
+    s = raw_input("%02d> "%destPeerID)
     if not s:
         break
+    parts = s.split(' ')
+    if len(parts) < 2:
+        print("Invalid command")
+    command = {}
+    command['opcode'] = parts[0]
+    command['filename'] = parts[1]
+    if parts[0] == 'append':
+        command['line'] = ' '.join(parts[2:])
+        
     sendMessage('EVENT', {'event': s}, destPeerID)
