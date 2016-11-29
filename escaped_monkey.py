@@ -189,8 +189,8 @@ def discovery_leader(s):
                    'history': s.history[:]}
     highestEpoch = max([q[i]['currentEpoch'] for i in q])
     hEg = filter(lambda x: q[x]['currentEpoch'] == highestEpoch, q)
-    highestZxid = max([q[i]['lastZxid'] for i in q])
-    hZg = filter(lambda x: q[x]['lastZxid'] == highestEpoch, s)
+    highestZxid = max([q[i]['lastZxid'] for i in hEg])
+    hZg = filter(lambda x: q[x]['lastZxid'] == highestEpoch, hEg)
     f = hZg[0]
     dprint("f has been chosen as %d"%f)
     return 'synchronization'
