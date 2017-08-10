@@ -1,6 +1,6 @@
 # escaped_monkey
 
-Implementation of the zookeper system.
+Implementation of the zookeper atomic broadcast system.
 
 Pair programmed by Adam Freeman and Malcolm Lorber.
 
