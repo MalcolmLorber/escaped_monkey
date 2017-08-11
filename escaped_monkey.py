@@ -35,7 +35,7 @@ def dprint(s):
     else:
         sys.stderr.write(str(s)+'\n')
 
-
+#core of the sendMessage function, does the network work
 def sendMsgA(addr, msg, peerID):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,6 +48,7 @@ def sendMsgA(addr, msg, peerID):
         if json.loads(msg)['opcode'] != 'HEARTBEAT':
             dprint("could not send message to %s"%str(addr))
 
+#logical layer of the sendMessage function, coordinates all the message sending
 def sendMessage(s, opcode, message, peernum):
     """Sends a message without blocking. May throw error on timeout"""
     if not hasattr(sendMessage, 'peers'):
@@ -67,6 +68,8 @@ def sendMessage(s, opcode, message, peernum):
     t.start()
     sendMessage.threads.append(t)
 
+    
+#asynchronous timeout loop on message receipt times    
 def timeloop(socket, t):
     timeleft = t
     while timeleft > 0.01:
@@ -178,7 +181,7 @@ def leaderElection(s):
 
     return "leader_election"
 
-
+#discovery fucntion that followers use
 def discovery_follower(s):
     sendMessage(s, 'FOLLOWERINFO', {'acceptedEpoch': s.acceptedEpoch}, s.leader)
     for msg in timeloop(s.sock, TIMEOUT_DISCOVERY_NEWEPOCH):
@@ -200,6 +203,7 @@ def discovery_follower(s):
 
     return 'leader_election'
 
+#discovery function that leaders use
 def discovery_leader(s):
     peersleft = len(s.peers) - 1
     epochnumbers = [s.currentEpoch]
@@ -270,7 +274,7 @@ def discovery_leader(s):
 
     return 'synchronization'
 
-
+#overall discovery function, delegate to correct function based on follower/leader
 def discovery(s):
     global filesystem
     filesystem = {}
@@ -279,6 +283,7 @@ def discovery(s):
     else:
         return discovery_follower(s)
 
+#synchronization function that leaders use
 def synchronization_leader(s):
     for i in s.quorum:
         sendMessage(s, 'NEWLEADER', {'eprime': s.eprime,
@@ -308,6 +313,7 @@ def synchronization_leader(s):
 
     return 'broadcast'
 
+#synchronization function that followers use
 def synchronization_follower(s):
     noncommited_txns = {}
     to_commit_txns = {}
@@ -354,13 +360,14 @@ def synchronization_follower(s):
 
     return 'leader_election'
 
-
+#overall synchronization function, delegate to correct function based on follower/leader
 def synchronization(s):
     if s.peerID == s.leader:
         return synchronization_leader(s)
     else:
         return synchronization_follower(s)
 
+#broadcast function that leaders use
 def broadcast_leader(s):
     counter = 0
     ackcounts = {}
@@ -415,6 +422,7 @@ def broadcast_leader(s):
         if len(connectedPeers) <= len(s.peers)/2.0:
             return "leader_election"
 
+#broadcast function that followers use
 def broadcast_follower(s):
     noncommited_txns = {}
     to_commit_txns = {}
@@ -453,6 +461,7 @@ def broadcast_follower(s):
         if not sendMessage.peerStatus[s.leader]:
             return 'leader_election'
 
+#overall broadcast function, delegate to correct function based on follower/leader
 def broadcast(s):
     if s.leader == s.peerID:
         return broadcast_leader(s)
