@@ -1,6 +1,6 @@
 # escaped_monkey
 
-Implementation of the zookeper atomic broadcast system.
+Implementation of the [zookeper](https://zookeeper.apache.org/doc/r3.4.1/zookeeperInternals.html#sc_atomicBroadcast) atomic broadcast system.
 
 Pair programmed by Adam Freeman and Malcolm Lorber.
 
